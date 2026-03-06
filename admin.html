@@ -36,7 +36,8 @@
 
         <!-- Controls -->
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <span id="phase-indicator" style="font-size:13px; color:var(--text-muted); margin-right:8px;"></span>
+          <span id="phase-indicator" style="font-size:13px; color:var(--text-muted); margin-right:4px;"></span>
+          <span id="timer-display" style="font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; min-width:48px; display:none;"></span>
           <select id="jump-select" style="background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:13px; cursor:pointer;">
             <option value="-1">— เลือกสถานการณ์ —</option>
           </select>
@@ -56,14 +57,32 @@
 
     <!-- Situation summary bar -->
     <div id="sit-summary-bar" style="display:none; background:var(--surface); border-bottom:1px solid var(--border); padding:12px 20px;">
-      <div style="max-width:1400px; margin:0 auto; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-        <div>
+      <div style="max-width:1400px; margin:0 auto;">
+        <!-- Title row -->
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
           <span id="sit-type-bar" class="situation-type" style="margin-bottom:0;"></span>
-          <span id="sit-title-bar" style="font-weight:700; font-size:15px; margin-left:8px;"></span>
+          <span id="sit-title-bar" style="font-weight:700; font-size:15px;"></span>
+          <button id="sit-toggle-btn" class="btn btn-ghost btn-sm" style="margin-left:4px; font-size:11px;">▼ รายละเอียด</button>
+          <div style="margin-left:auto; font-size:13px; color:var(--text-muted);">
+            โหวตรวม: <strong id="total-votes-bar" style="color:var(--text);">0</strong> /
+            <strong id="total-possible-bar" style="color:var(--text);">0</strong>
+          </div>
         </div>
-        <div style="margin-left:auto; font-size:13px; color:var(--text-muted);">
-          โหวตรวม: <strong id="total-votes-bar" style="color:var(--text);">0</strong> /
-          <strong id="total-possible-bar" style="color:var(--text);">0</strong>
+        <!-- Collapsible detail panel -->
+        <div id="sit-detail-panel" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
+          <p id="sit-desc-bar" style="font-size:13px; color:var(--text-muted); margin-bottom:10px; line-height:1.6;"></p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div style="background:var(--bg); border-radius:6px; padding:10px;">
+              <div style="font-size:11px; font-weight:700; color:#4f8ef7; margin-bottom:4px;">ตัวเลือก A</div>
+              <div id="sit-opt-a-bar" style="font-size:13px; font-weight:600;"></div>
+              <div id="sit-opt-a-desc-bar" style="font-size:12px; color:var(--text-muted); margin-top:4px;"></div>
+            </div>
+            <div style="background:var(--bg); border-radius:6px; padding:10px;">
+              <div style="font-size:11px; font-weight:700; color:#f59e0b; margin-bottom:4px;">ตัวเลือก B</div>
+              <div id="sit-opt-b-bar" style="font-size:13px; font-weight:600;"></div>
+              <div id="sit-opt-b-desc-bar" style="font-size:12px; color:var(--text-muted); margin-top:4px;"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

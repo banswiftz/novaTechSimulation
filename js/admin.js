@@ -45,21 +45,42 @@ let players    = [];      // all players across all groups
 let groupScores = {};     // group_number -> {cash_flow, brand_trust, employee_morale}
 let votes      = [];      // votes for current situation
 
+// ── Timer ─────────────────────────────────────────────────────
+// Discussion time per situation type (seconds)
+const SIT_DURATION = { situation: 10 * 60, popup: 5 * 60 };
+let timerInterval = null;
+let timerEndsAt   = null;
+
 // ── DOM refs ─────────────────────────────────────────────────
 const jumpSelect       = document.getElementById('jump-select');
 const revealBtn        = document.getElementById('reveal-btn');
 const resetBtn         = document.getElementById('reset-btn');
 const phaseIndicator   = document.getElementById('phase-indicator');
+const timerDisplay     = document.getElementById('timer-display');
 const adminProgress    = document.getElementById('admin-progress');
 const sitSummaryBar    = document.getElementById('sit-summary-bar');
 const sitTypeBar       = document.getElementById('sit-type-bar');
 const sitTitleBar      = document.getElementById('sit-title-bar');
+const sitDescBar       = document.getElementById('sit-desc-bar');
+const sitOptABar       = document.getElementById('sit-opt-a-bar');
+const sitOptADescBar   = document.getElementById('sit-opt-a-desc-bar');
+const sitOptBBar       = document.getElementById('sit-opt-b-bar');
+const sitOptBDescBar   = document.getElementById('sit-opt-b-desc-bar');
+const sitDetailPanel   = document.getElementById('sit-detail-panel');
+const sitToggleBtn     = document.getElementById('sit-toggle-btn');
 const totalVotesBar    = document.getElementById('total-votes-bar');
 const totalPossibleBar = document.getElementById('total-possible-bar');
 const groupsGrid       = document.getElementById('groups-grid');
 const noGroupsMsg      = document.getElementById('no-groups-msg');
 const adminGameOver    = document.getElementById('admin-game-over');
 const adminGoReason    = document.getElementById('admin-go-reason');
+
+// ── Detail panel toggle ───────────────────────────────────────
+sitToggleBtn.addEventListener('click', () => {
+  const open = sitDetailPanel.style.display !== 'none';
+  sitDetailPanel.style.display = open ? 'none' : 'block';
+  sitToggleBtn.textContent = open ? '▼ รายละเอียด' : '▲ ซ่อน';
+});
 
 // ── Init ─────────────────────────────────────────────────────
 async function initAdmin() {
@@ -137,6 +158,7 @@ function renderSituationBar() {
 
   if (sitIdx < 0 || sitIdx >= SITUATIONS.length) {
     sitSummaryBar.style.display = 'none';
+    stopTimer();
     return;
   }
 
@@ -146,10 +168,44 @@ function renderSituationBar() {
   sitTypeBar.className    = `situation-type${sit.type === 'popup' ? ' popup' : ''}`;
   sitTitleBar.textContent = sit.title;
 
+  // Populate detail panel
+  sitDescBar.textContent     = sit.description;
+  sitOptABar.textContent     = sit.optionA.label;
+  sitOptADescBar.textContent = sit.optionA.description;
+  sitOptBBar.textContent     = sit.optionB.label;
+  sitOptBDescBar.textContent = sit.optionB.description;
+
   const totalPossible = players.length;
   const totalVoted    = votes.length;
   totalVotesBar.textContent    = totalVoted;
   totalPossibleBar.textContent = totalPossible;
+}
+
+// ── Timer ──────────────────────────────────────────────────────
+function startTimer(sit) {
+  stopTimer();
+  const durationSec = SIT_DURATION[sit.type] ?? SIT_DURATION.situation;
+  timerEndsAt = Date.now() + durationSec * 1000;
+  timerDisplay.style.display = 'inline';
+  tickTimer();
+  timerInterval = setInterval(tickTimer, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerEndsAt   = null;
+  timerDisplay.style.display = 'none';
+}
+
+function tickTimer() {
+  if (!timerEndsAt) return;
+  const remaining = Math.max(0, Math.round((timerEndsAt - Date.now()) / 1000));
+  const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+  const s = String(remaining % 60).padStart(2, '0');
+  timerDisplay.textContent = `⏱ ${m}:${s}`;
+  timerDisplay.style.color = remaining <= 120 ? '#f05252' : remaining <= 300 ? '#f59e0b' : 'var(--text)';
+  if (remaining === 0) stopTimer();
 }
 
 function getGroups() {
@@ -330,6 +386,12 @@ jumpSelect.addEventListener('change', async () => {
     const label = targetIdx >= SITUATIONS.length ? 'จบเกม' :
       targetIdx === -1 ? 'ยังไม่เริ่ม' : SITUATIONS[targetIdx].title;
     showToast(`เปลี่ยนไป: ${label}`, 'success');
+    // Start countdown when entering a voting situation
+    if (targetIdx >= 0 && targetIdx < SITUATIONS.length) {
+      startTimer(SITUATIONS[targetIdx]);
+    } else {
+      stopTimer();
+    }
   }
   jumpSelect.disabled = false;
 });
@@ -341,28 +403,56 @@ revealBtn.addEventListener('click', async () => {
 
   await loadVotes(sitIdx);
 
+  // ── Guard: check which groups already have results (double-score prevention)
+  const { data: existingResults } = await supabase
+    .from('group_results').select('group_number').eq('situation_index', sitIdx);
+  const alreadyRevealed = new Set((existingResults || []).map(r => r.group_number));
+
   const groups = getGroups();
   const errors = [];
 
+  // ── Guard: warn about under-voted or already-revealed groups
+  const underVoted  = groups.filter(gNum => {
+    const gPlayers = players.filter(p => p.group_number === gNum);
+    const gVotes   = votes.filter(v => new Set(gPlayers.map(p => p.id)).has(v.player_id));
+    return gVotes.length > 0 && gVotes.length < gPlayers.length;
+  });
+  const warnings = [];
+  if (underVoted.length > 0)
+    warnings.push(`โหวตยังไม่ครบ: ${underVoted.map(g => `กลุ่ม ${g}`).join(', ')}`);
+  if (alreadyRevealed.size > 0)
+    warnings.push(`เปิดผลไปแล้ว (จะถูกข้าม): ${[...alreadyRevealed].map(g => `กลุ่ม ${g}`).join(', ')}`);
+
+  if (warnings.length > 0 && !confirm(`⚠️ คำเตือน:\n${warnings.join('\n')}\n\nดำเนินการต่อหรือไม่?`)) {
+    revealBtn.disabled = false;
+    return;
+  }
+
   for (const gNum of groups) {
-    const groupPlayers = players.filter(p => p.group_number === gNum);
+    // Skip groups already scored for this situation
+    if (alreadyRevealed.has(gNum)) continue;
+
+    const groupPlayers  = players.filter(p => p.group_number === gNum);
     const groupPlayerIds = new Set(groupPlayers.map(p => p.id));
-    const groupVotes = votes.filter(v => groupPlayerIds.has(v.player_id));
+    const groupVotes    = votes.filter(v => groupPlayerIds.has(v.player_id));
 
     const countA = groupVotes.filter(v => v.choice === 'A').length;
     const countB = groupVotes.filter(v => v.choice === 'B').length;
 
+    // Skip groups with zero votes
+    if (countA + countB === 0) {
+      showToast(`กลุ่ม ${gNum}: ยังไม่มีโหวต — ข้ามกลุ่มนี้`, 'error');
+      continue;
+    }
+
     let winner;
     if (countA === countB) {
-      // Tie — ask admin to break it
       let choice = '';
       while (choice !== 'A' && choice !== 'B') {
         choice = (prompt(
           `กลุ่ม ${gNum}: โหวตเสมอกัน (A: ${countA}, B: ${countB})\nกรุณาพิมพ์ A หรือ B เพื่อตัดสินผลของกลุ่มนี้:`
         ) || '').trim().toUpperCase();
-        if (choice !== 'A' && choice !== 'B') {
-          alert('กรุณาพิมพ์ A หรือ B เท่านั้น');
-        }
+        if (choice !== 'A' && choice !== 'B') alert('กรุณาพิมพ์ A หรือ B เท่านั้น');
       }
       winner = choice;
     } else {
@@ -375,7 +465,6 @@ revealBtn.addEventListener('click', async () => {
 
     const { newPlayerScores, newCompany } = applyScores(sitIdx, winner, currentKpis, currentCompany);
 
-    // Update all players in this group
     const playerUpdates = groupPlayers.map(p =>
       supabase.from('players').update({ kpi_score: newPlayerScores[p.role] }).eq('id', p.id)
     );
@@ -386,11 +475,10 @@ revealBtn.addEventListener('click', async () => {
         brand_trust:     newCompany.brand_trust,
         employee_morale: newCompany.employee_morale,
       }).eq('group_number', gNum),
-      // Record the winning option for this group so player pages can show it
       supabase.from('group_results').upsert({
-        group_number:     gNum,
-        situation_index:  sitIdx,
-        winning_option:   winner,
+        group_number:    gNum,
+        situation_index: sitIdx,
+        winning_option:  winner,
       }, { onConflict: 'group_number,situation_index' }),
       ...playerUpdates,
     ]);
@@ -398,13 +486,11 @@ revealBtn.addEventListener('click', async () => {
     const groupErrors = [companyRes, resultRes, ...playerResults].filter(r => r.error);
     if (groupErrors.length > 0) errors.push(`กลุ่ม ${gNum}`);
     else {
-      // Update local state
       groupScores[gNum] = newCompany;
       for (const p of groupPlayers) p.kpi_score = newPlayerScores[p.role];
     }
   }
 
-  // Mark game state as revealed
   await supabase.from('game_state').update({
     phase: 'revealed',
     updated_at: new Date().toISOString(),

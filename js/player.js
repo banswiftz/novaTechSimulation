@@ -70,6 +70,7 @@ function showRemovedScreen(headline, sub) {
 let currentSitIdx   = -1;
 let myVote          = null;
 let lastRevealedIdx = -1;
+let myKpiScore      = 50;
 
 // ── Init ─────────────────────────────────────────────────────
 async function init() {
@@ -210,6 +211,16 @@ function showVoting(sit, alreadyVoted) {
   btnA.className = 'option-btn';
   btnB.className = 'option-btn';
 
+  // Fired players cannot vote
+  if (myKpiScore <= FIRED_THRESHOLD) {
+    btnA.disabled = true; btnB.disabled = true;
+    votedNotice.style.display = 'block';
+    votedNotice.textContent = 'คุณถูกไล่ออกแล้ว — ไม่สามารถโหวตได้';
+    return;
+  }
+
+  votedNotice.textContent = 'ส่งโหวตแล้ว รอผลจากสมาชิกคนอื่น...';
+
   if (alreadyVoted) {
     btnA.disabled = true; btnB.disabled = true;
     votedNotice.style.display = 'block';
@@ -297,15 +308,19 @@ async function showEndScreen(player, company) {
     .eq('group_number', groupNumber)
     .order('kpi_score', { ascending: false });
 
-  const survived = company &&
+  const companyOk = company &&
     company.cash_flow > GAME_OVER_THRESHOLD &&
     company.brand_trust > GAME_OVER_THRESHOLD &&
     company.employee_morale > GAME_OVER_THRESHOLD;
+  const noFired  = (groupPlayers || []).every(p => p.kpi_score > FIRED_THRESHOLD);
+  const survived = companyOk && noFired;
 
   document.getElementById('end-headline').textContent = survived ? 'NovaTech รอดพ้น!' : 'NovaTech ล้มเหลว';
   document.getElementById('end-sub').textContent = survived
     ? 'กลุ่มของคุณผ่านพ้นวิกฤตทั้งหมดได้ ยอดเยี่ยมมาก!'
-    : 'กลุ่มของคุณไม่สามารถรับมือกับวิกฤตได้';
+    : !companyOk
+      ? 'กลุ่มของคุณไม่สามารถรักษาดัชนีชี้วัดของบริษัทไว้ได้'
+      : 'มีผู้บริหารถูกไล่ออก — ทีมไม่สมบูรณ์';
 
   const container = document.getElementById('final-scores');
   container.innerHTML = `<div class="card-title" style="margin-bottom:10px;">กลุ่ม ${groupNumber} — คะแนน KPI สุดท้าย</div>`;
@@ -330,6 +345,7 @@ async function showEndScreen(player, company) {
 
 // ── Update KPI ────────────────────────────────────────────────
 function updateKpi(score) {
+  myKpiScore = score;
   kpiValue.textContent = score;
   const cls = score <= FIRED_THRESHOLD ? 'dead' : score <= 20 ? 'low' : score <= 35 ? 'medium' : 'high';
   kpiValue.className = `kpi-value ${cls}`;

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"c:\\\\Users\\\\User\\\\Downloads\\\\simulation\\\\game-flow\"\" 2>/dev/null || ls -la \"/c/Users/User/Downloads/simulation/game-flow/\" 2>/dev/null || find \"c:UsersUserDownloadssimulationgame-flow\" -type f 2>/dev/null || find \"/c/Users/User/Downloads/simulation/game-flow \" -type f)",
+      "Bash(file *)",
+      "Bash(python3 -c \"import openpyxl; wb = openpyxl.load_workbook\\(''Point game.xlsx''\\); print\\(''\\\\n''.join\\([sheet.title for sheet in wb.sheetnames]\\)\\)\")"
+    ]
+  }
+}

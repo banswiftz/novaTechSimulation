@@ -46,14 +46,36 @@ joinBtn.addEventListener('click', async () => {
   }
 
   // Auto-assign next role in order
-  const assignedRole = ROLES[groupMembers.length];
+  // Retry once if a concurrent join caused a unique constraint violation (race condition)
+  let assignedRole = ROLES[groupMembers.length];
+  let player, insertErr;
 
-  // Insert player
-  const { data: player, error: insertErr } = await supabase
-    .from('players')
-    .insert({ name, role: assignedRole, group_number: group, kpi_score: 50 })
-    .select()
-    .single();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    ({ data: player, error: insertErr } = await supabase
+      .from('players')
+      .insert({ name, role: assignedRole, group_number: group, kpi_score: 50 })
+      .select()
+      .single());
+
+    // 23505 = unique_violation — another player took this role simultaneously
+    if (insertErr && (insertErr.code === '23505' || insertErr.message?.includes('unique'))) {
+      // Re-query group to get updated count and try next role
+      const { data: refreshed } = await supabase
+        .from('players').select('id, role').eq('group_number', group);
+      if ((refreshed?.length ?? 0) >= 5) {
+        showError(`กลุ่มที่ ${group} เต็มแล้ว (5/5 คน) กรุณาเลือกกลุ่มอื่น`);
+        reset(); return;
+      }
+      const takenRoles = new Set((refreshed || []).map(p => p.role));
+      assignedRole = ROLES.find(r => !takenRoles.has(r));
+      if (!assignedRole) {
+        showError(`กลุ่มที่ ${group} เต็มแล้ว (5/5 คน) กรุณาเลือกกลุ่มอื่น`);
+        reset(); return;
+      }
+      continue;
+    }
+    break;
+  }
 
   if (insertErr) {
     showError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');

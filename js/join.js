@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
-import { ROLES } from './game-data.js';
 
 const nameInput  = document.getElementById('player-name');
+const roleSelect = document.getElementById('role-select');
 const groupInput = document.getElementById('group-number');
 const joinBtn    = document.getElementById('join-btn');
 const joinError  = document.getElementById('join-error');
@@ -9,76 +9,90 @@ const joinForm   = document.getElementById('join-form');
 const waitingDiv = document.getElementById('waiting-for-game');
 const joinedAsP  = document.getElementById('joined-as');
 
-// ── If already joined, redirect straight to player page ─────
+// ── Determine voter vs viewer from URL param ──────────────────
+const isVoter = new URLSearchParams(window.location.search).get('voter') === '1';
+
+// Show access label
+const accessLabel = document.getElementById('access-label');
+if (isVoter) {
+  accessLabel.textContent = 'โหมดผู้โหวต — คุณสามารถโหวตเลือกทางออกให้กลุ่มได้';
+  accessLabel.style.background = '#1e3a5f';
+  accessLabel.style.color = '#4f8ef7';
+  accessLabel.style.display = 'block';
+} else {
+  accessLabel.textContent = 'โหมดผู้ชม — คุณสามารถดูสถานการณ์และคะแนนได้';
+  accessLabel.style.background = '#1e2d1e';
+  accessLabel.style.color = '#22c55e';
+  accessLabel.style.display = 'block';
+}
+
+// ── If already joined, redirect straight to player page ───────
 const existingId = localStorage.getItem('novatech_player_id');
 if (existingId) {
   window.location.href = 'player.html';
 }
 
-// ── Join button ──────────────────────────────────────────────
+// ── Join button ───────────────────────────────────────────────
 joinBtn.addEventListener('click', async () => {
   const name  = nameInput.value.trim();
+  const role  = roleSelect.value;
   const group = parseInt(groupInput.value);
 
   hideError();
 
-  if (!name)           { showError('กรุณาใส่ชื่อของคุณ'); return; }
+  if (!name)               { showError('กรุณาใส่ชื่อของคุณ'); return; }
+  if (!role)               { showError('กรุณาเลือกตำแหน่งของคุณ'); return; }
   if (!group || group < 1) { showError('กรุณาใส่หมายเลขกลุ่มที่ถูกต้อง'); return; }
 
   joinBtn.disabled = true;
   joinBtn.textContent = 'กำลังเข้าร่วม...';
 
-  // Count current members in this group (with a lock-style re-check)
-  const { data: groupMembers, error: fetchErr } = await supabase
+  // Check if this role is already taken in this group
+  const { data: existingRole, error: checkErr } = await supabase
     .from('players')
-    .select('id, role')
+    .select('id')
     .eq('group_number', group)
-    .order('created_at');
+    .eq('role', role)
+    .maybeSingle();
 
-  if (fetchErr) {
+  if (checkErr) {
     showError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
     reset(); return;
   }
 
-  if (groupMembers.length >= 5) {
-    showError(`กลุ่มที่ ${group} เต็มแล้ว (5/5 คน) กรุณาเลือกกลุ่มอื่น`);
+  if (existingRole) {
+    showError(`ตำแหน่ง ${role} ในกลุ่ม ${group} มีผู้เล่นแล้ว กรุณาเลือกตำแหน่งอื่น`);
     reset(); return;
   }
 
-  // Auto-assign next role in order
-  // Retry once if a concurrent join caused a unique constraint violation (race condition)
-  let assignedRole = ROLES[groupMembers.length];
-  let player, insertErr;
-
-  for (let attempt = 0; attempt < 2; attempt++) {
-    ({ data: player, error: insertErr } = await supabase
+  // Check if voter slot is already taken (only one voter per group)
+  if (isVoter) {
+    const { data: existingVoter } = await supabase
       .from('players')
-      .insert({ name, role: assignedRole, group_number: group, kpi_score: 50 })
-      .select()
-      .single());
+      .select('id')
+      .eq('group_number', group)
+      .eq('is_voter', true)
+      .maybeSingle();
 
-    // 23505 = unique_violation — another player took this role simultaneously
-    if (insertErr && (insertErr.code === '23505' || insertErr.message?.includes('unique'))) {
-      // Re-query group to get updated count and try next role
-      const { data: refreshed } = await supabase
-        .from('players').select('id, role').eq('group_number', group);
-      if ((refreshed?.length ?? 0) >= 5) {
-        showError(`กลุ่มที่ ${group} เต็มแล้ว (5/5 คน) กรุณาเลือกกลุ่มอื่น`);
-        reset(); return;
-      }
-      const takenRoles = new Set((refreshed || []).map(p => p.role));
-      assignedRole = ROLES.find(r => !takenRoles.has(r));
-      if (!assignedRole) {
-        showError(`กลุ่มที่ ${group} เต็มแล้ว (5/5 คน) กรุณาเลือกกลุ่มอื่น`);
-        reset(); return;
-      }
-      continue;
+    if (existingVoter) {
+      showError(`กลุ่ม ${group} มีผู้โหวตแล้ว ไม่สามารถเพิ่มผู้โหวตได้อีก`);
+      reset(); return;
     }
-    break;
   }
 
+  // Insert player (unique constraint on group_number+role handles race condition)
+  const { data: player, error: insertErr } = await supabase
+    .from('players')
+    .insert({ name, role, group_number: group, kpi_score: 50, is_voter: isVoter })
+    .select()
+    .single();
+
   if (insertErr) {
-    showError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    if (insertErr.code === '23505' || insertErr.message?.includes('unique')) {
+      showError(`ตำแหน่ง ${role} ในกลุ่ม ${group} มีผู้เล่นแล้ว กรุณาเลือกตำแหน่งอื่น`);
+    } else {
+      showError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    }
     reset(); return;
   }
 
@@ -93,11 +107,13 @@ joinBtn.addEventListener('click', async () => {
   localStorage.setItem('novatech_player_role',  player.role);
   localStorage.setItem('novatech_player_name',  player.name);
   localStorage.setItem('novatech_group_number', String(group));
+  localStorage.setItem('novatech_is_voter',     String(isVoter));
 
   // Show waiting state
-  joinForm.style.display    = 'none';
-  waitingDiv.style.display  = 'block';
-  joinedAsP.textContent = `กลุ่มที่ ${group} — ${player.name} (${player.role})`;
+  joinForm.style.display   = 'none';
+  waitingDiv.style.display = 'block';
+  const accessTag = isVoter ? '(ผู้โหวต)' : '(ผู้ชม)';
+  joinedAsP.textContent = `กลุ่มที่ ${group} — ${player.name} (${player.role}) ${accessTag}`;
 
   // Subscribe to game_state — redirect when game starts
   const channel = supabase

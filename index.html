@@ -19,10 +19,24 @@
           <p id="joined-as" style="margin-top:10px;font-size:13px;color:#8892a4;"></p>
         </div>
 
+        <div id="access-label" style="text-align:center; margin-bottom:14px; font-size:13px; padding:6px 12px; border-radius:6px; display:none;"></div>
+
         <div id="join-form">
           <div class="form-group">
             <label class="form-label" for="player-name">ชื่อของคุณ</label>
             <input class="form-input" type="text" id="player-name" placeholder="เช่น สิริพร" autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="role-select">ตำแหน่งของคุณ</label>
+            <select class="form-input" id="role-select">
+              <option value="">— เลือกตำแหน่ง —</option>
+              <option value="CFO">CFO — ประธานเจ้าหน้าที่ฝ่ายการเงิน</option>
+              <option value="CMO">CMO — ประธานเจ้าหน้าที่ฝ่ายการตลาด</option>
+              <option value="COO">COO — ประธานเจ้าหน้าที่ฝ่ายปฏิบัติการ</option>
+              <option value="CHRO">CHRO — ประธานเจ้าหน้าที่ฝ่ายทรัพยากรบุคคล</option>
+              <option value="CLO">CLO — ประธานเจ้าหน้าที่ฝ่ายกฎหมาย</option>
+            </select>
           </div>
 
           <div class="form-group">

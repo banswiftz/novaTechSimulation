@@ -3,7 +3,7 @@ import {
   SITUATIONS, ROLES,
   INITIAL_COMPANY,
   GAME_OVER_THRESHOLD, FIRED_THRESHOLD,
-  getWinner, applyScores
+  applyScores
 } from './game-data.js';
 
 // ── Auth ─────────────────────────────────────────────────────
@@ -175,10 +175,12 @@ function renderSituationBar() {
   sitOptBBar.textContent     = sit.optionB.label;
   sitOptBDescBar.textContent = sit.optionB.description;
 
-  const totalPossible = players.length;
-  const totalVoted    = votes.length;
-  totalVotesBar.textContent    = totalVoted;
-  totalPossibleBar.textContent = totalPossible;
+  // Count groups where the voter has already voted
+  const groups = getGroups();
+  const voterIds = new Set(players.filter(p => p.is_voter).map(p => p.id));
+  const groupsVoted = votes.filter(v => voterIds.has(v.player_id)).length;
+  totalVotesBar.textContent    = groupsVoted;
+  totalPossibleBar.textContent = groups.length;
 }
 
 // ── Timer ──────────────────────────────────────────────────────
@@ -235,15 +237,10 @@ function buildGroupCard(gNum) {
   });
 
   const gs = groupScores[gNum] || { cash_flow: 50, brand_trust: 50, employee_morale: 50 };
-  // Re-filter using player IDs for reliability
-  const groupPlayerIds = new Set(groupPlayers.map(p => p.id));
-  const groupVotesList = votes.filter(v => groupPlayerIds.has(v.player_id));
-  const voteMap = {};
-  for (const v of groupVotesList) voteMap[v.player_id] = v.choice;
-
-  const countA = groupVotesList.filter(v => v.choice === 'A').length;
-  const countB = groupVotesList.filter(v => v.choice === 'B').length;
-  const voted  = groupVotesList.length;
+  // Find the voter and their vote for this situation
+  const voter = groupPlayers.find(p => p.is_voter);
+  const voterVote = voter ? votes.find(v => v.player_id === voter.id) : null;
+  const voterChoice = voterVote?.choice ?? null;
 
   // Company danger
   const cashDanger   = gs.cash_flow <= GAME_OVER_THRESHOLD;
@@ -281,14 +278,15 @@ function buildGroupCard(gNum) {
       </div>
     </div>
 
-    <!-- Vote tally (only during active situation) -->
+    <!-- Vote status (only during active situation) -->
     ${sitIdx >= 0 && sitIdx < SITUATIONS.length ? `
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-size:13px;">
-      <span style="color:var(--text-muted);">โหวต: ${voted}/${groupPlayers.length}</span>
-      <span style="display:flex; align-items:center; gap:6px;">
-        ${countA === countB && voted > 0 ? '<span style="background:#f59e0b; color:#000; font-size:11px; font-weight:700; padding:2px 7px; border-radius:4px;">⚖ เสมอกัน</span>' : ''}
-        <span class="vote-badge a">A: ${countA}</span>
-        <span class="vote-badge b">B: ${countB}</span>
+      <span style="color:var(--text-muted);">ผู้โหวต: ${voter ? voter.name : '—'}</span>
+      <span>
+        ${voterChoice
+          ? `<span class="vote-badge ${voterChoice.toLowerCase()}">โหวต ${voterChoice}</span>`
+          : '<span class="vote-badge wait">ยังไม่โหวต</span>'
+        }
       </span>
     </div>` : ''}
 
@@ -299,24 +297,20 @@ function buildGroupCard(gNum) {
           <th>ชื่อ</th>
           <th>ตำแหน่ง</th>
           <th>KPI</th>
-          ${sitIdx >= 0 && sitIdx < SITUATIONS.length ? '<th>โหวต</th>' : ''}
           <th></th>
         </tr>
       </thead>
       <tbody>
         ${groupPlayers.map(p => {
-          const choice = voteMap[p.id];
-          const fired  = p.kpi_score <= FIRED_THRESHOLD;
+          const fired = p.kpi_score <= FIRED_THRESHOLD;
+          const voterTag = p.is_voter
+            ? '<span style="background:#1e3a5f;color:#4f8ef7;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;">โหวต</span>'
+            : '';
           return `
             <tr>
-              <td style="font-weight:600; ${fired ? 'text-decoration:line-through;color:#666;' : ''}">${p.name}</td>
+              <td style="font-weight:600; ${fired ? 'text-decoration:line-through;color:#666;' : ''}">${p.name}${voterTag}</td>
               <td><span class="role-badge role-${p.role}" style="font-size:10px;">${p.role}</span></td>
               <td style="font-weight:700; color:${scoreColor(p.kpi_score)}">${p.kpi_score}</td>
-              ${sitIdx >= 0 && sitIdx < SITUATIONS.length ? `
-              <td>${choice
-                ? `<span class="vote-badge ${choice.toLowerCase()}">${choice}</span>`
-                : '<span class="vote-badge wait">⏳</span>'
-              }</td>` : ''}
               <td>
                 <button class="btn btn-danger btn-sm remove-player-btn" data-id="${p.id}" style="padding:3px 8px; font-size:11px;">
                   นำออก
@@ -324,7 +318,7 @@ function buildGroupCard(gNum) {
               </td>
             </tr>`;
         }).join('')}
-        ${groupPlayers.length === 0 ? '<tr><td colspan="5" style="color:#8892a4; text-align:center;">ยังไม่มีสมาชิก</td></tr>' : ''}
+        ${groupPlayers.length === 0 ? '<tr><td colspan="4" style="color:#8892a4; text-align:center;">ยังไม่มีสมาชิก</td></tr>' : ''}
       </tbody>
     </table>
   `;
@@ -411,19 +405,21 @@ revealBtn.addEventListener('click', async () => {
   const groups = getGroups();
   const errors = [];
 
-  // ── Guard: warn about under-voted or already-revealed groups
-  const underVoted  = groups.filter(gNum => {
-    const gPlayers = players.filter(p => p.group_number === gNum);
-    const gVotes   = votes.filter(v => new Set(gPlayers.map(p => p.id)).has(v.player_id));
-    return gVotes.length > 0 && gVotes.length < gPlayers.length;
+  // ── Guard: warn about groups where voter hasn't voted yet
+  const voterIds = new Set(players.filter(p => p.is_voter).map(p => p.id));
+  const votedVoterIds = new Set(votes.filter(v => voterIds.has(v.player_id)).map(v => v.player_id));
+  const notYetVoted = groups.filter(gNum => {
+    const voter = players.find(p => p.group_number === gNum && p.is_voter);
+    return voter && !votedVoterIds.has(voter.id);
   });
+
   const warnings = [];
-  if (underVoted.length > 0)
-    warnings.push(`โหวตยังไม่ครบ: ${underVoted.map(g => `กลุ่ม ${g}`).join(', ')}`);
+  if (notYetVoted.length > 0)
+    warnings.push(`ยังไม่โหวต: ${notYetVoted.map(g => `กลุ่ม ${g}`).join(', ')}`);
   if (alreadyRevealed.size > 0)
     warnings.push(`เปิดผลไปแล้ว (จะถูกข้าม): ${[...alreadyRevealed].map(g => `กลุ่ม ${g}`).join(', ')}`);
 
-  if (warnings.length > 0 && !confirm(`⚠️ คำเตือน:\n${warnings.join('\n')}\n\nดำเนินการต่อหรือไม่?`)) {
+  if (warnings.length > 0 && !confirm(`คำเตือน:\n${warnings.join('\n')}\n\nดำเนินการต่อหรือไม่?`)) {
     revealBtn.disabled = false;
     return;
   }
@@ -432,42 +428,40 @@ revealBtn.addEventListener('click', async () => {
     // Skip groups already scored for this situation
     if (alreadyRevealed.has(gNum)) continue;
 
-    const groupPlayers  = players.filter(p => p.group_number === gNum);
-    const groupPlayerIds = new Set(groupPlayers.map(p => p.id));
-    const groupVotes    = votes.filter(v => groupPlayerIds.has(v.player_id));
+    const groupPlayers = players.filter(p => p.group_number === gNum);
+    const voter = groupPlayers.find(p => p.is_voter);
 
-    const countA = groupVotes.filter(v => v.choice === 'A').length;
-    const countB = groupVotes.filter(v => v.choice === 'B').length;
-
-    // Skip groups with zero votes
-    if (countA + countB === 0) {
-      showToast(`กลุ่ม ${gNum}: ยังไม่มีโหวต — ข้ามกลุ่มนี้`, 'error');
+    // Skip groups with no voter registered
+    if (!voter) {
+      showToast(`กลุ่ม ${gNum}: ไม่มีผู้โหวตในกลุ่มนี้ — ข้ามกลุ่มนี้`, 'error');
       continue;
     }
 
-    let winner;
-    if (countA === countB) {
-      let choice = '';
-      while (choice !== 'A' && choice !== 'B') {
-        choice = (prompt(
-          `กลุ่ม ${gNum}: โหวตเสมอกัน (A: ${countA}, B: ${countB})\nกรุณาพิมพ์ A หรือ B เพื่อตัดสินผลของกลุ่มนี้:`
-        ) || '').trim().toUpperCase();
-        if (choice !== 'A' && choice !== 'B') alert('กรุณาพิมพ์ A หรือ B เท่านั้น');
-      }
-      winner = choice;
-    } else {
-      winner = getWinner(countA, countB);
-    }
-
-    const currentKpis = {};
-    for (const p of groupPlayers) currentKpis[p.role] = p.kpi_score;
+    const voterVote = votes.find(v => v.player_id === voter.id);
     const currentCompany = groupScores[gNum] || { ...INITIAL_COMPANY };
 
-    const { newPlayerScores, newCompany } = applyScores(sitIdx, winner, currentKpis, currentCompany);
+    let newCompany, newPlayerScores, winner, playerUpdates;
 
-    const playerUpdates = groupPlayers.map(p =>
-      supabase.from('players').update({ kpi_score: newPlayerScores[p.role] }).eq('id', p.id)
-    );
+    if (!voterVote) {
+      // No-vote penalty (X): company -10 each, KPI unchanged
+      winner = 'X';
+      newCompany      = {
+        cash_flow:       Math.max(0, currentCompany.cash_flow - 10),
+        brand_trust:     Math.max(0, currentCompany.brand_trust - 10),
+        employee_morale: Math.max(0, currentCompany.employee_morale - 10),
+      };
+      newPlayerScores = null;
+      playerUpdates   = [];
+      showToast(`กลุ่ม ${gNum}: ผู้โหวตไม่โหวตทันเวลา — หักคะแนนบริษัท -10`, 'error');
+    } else {
+      winner = voterVote.choice;
+      const currentKpis = {};
+      for (const p of groupPlayers) currentKpis[p.role] = p.kpi_score;
+      ({ newCompany, newPlayerScores } = applyScores(sitIdx, winner, currentKpis, currentCompany));
+      playerUpdates = groupPlayers.map(p =>
+        supabase.from('players').update({ kpi_score: newPlayerScores[p.role] }).eq('id', p.id)
+      );
+    }
 
     const [companyRes, resultRes, ...playerResults] = await Promise.all([
       supabase.from('group_scores').update({
@@ -487,7 +481,9 @@ revealBtn.addEventListener('click', async () => {
     if (groupErrors.length > 0) errors.push(`กลุ่ม ${gNum}`);
     else {
       groupScores[gNum] = newCompany;
-      for (const p of groupPlayers) p.kpi_score = newPlayerScores[p.role];
+      if (newPlayerScores) {
+        for (const p of groupPlayers) p.kpi_score = newPlayerScores[p.role];
+      }
     }
   }
 

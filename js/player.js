@@ -9,6 +9,7 @@ const playerId   = localStorage.getItem('novatech_player_id');
 const playerRole = localStorage.getItem('novatech_player_role');
 const playerName = localStorage.getItem('novatech_player_name');
 const groupNumber= parseInt(localStorage.getItem('novatech_group_number') || '1');
+const isVoter    = localStorage.getItem('novatech_is_voter') === 'true';
 
 if (!playerId || !playerRole) {
   window.location.href = 'index.html';
@@ -56,6 +57,7 @@ function clearSession() {
   localStorage.removeItem('novatech_player_role');
   localStorage.removeItem('novatech_player_name');
   localStorage.removeItem('novatech_group_number');
+  localStorage.removeItem('novatech_is_voter');
 }
 
 function showRemovedScreen(headline, sub) {
@@ -204,12 +206,23 @@ function showVoting(sit, alreadyVoted) {
   document.getElementById('opt-b-title').textContent  = sit.optionB.label;
   document.getElementById('opt-b-desc').textContent   = sit.optionB.description;
 
+  const optionsGrid = document.getElementById('options-grid');
   const btnA = document.getElementById('btn-a');
   const btnB = document.getElementById('btn-b');
   const votedNotice = document.getElementById('voted-notice');
 
   btnA.className = 'option-btn';
   btnB.className = 'option-btn';
+
+  // Viewers cannot vote — show situation info only
+  if (!isVoter) {
+    optionsGrid.style.display = 'none';
+    votedNotice.style.display = 'block';
+    votedNotice.textContent = 'กำลังรอผลการโหวตจากผู้โหวตของกลุ่ม...';
+    return;
+  }
+
+  optionsGrid.style.display = '';
 
   // Fired players cannot vote
   if (myKpiScore <= FIRED_THRESHOLD) {
@@ -219,7 +232,7 @@ function showVoting(sit, alreadyVoted) {
     return;
   }
 
-  votedNotice.textContent = 'ส่งโหวตแล้ว รอผลจากสมาชิกคนอื่น...';
+  votedNotice.textContent = 'ส่งโหวตแล้ว — รอผู้ดำเนินเกมเปิดผล';
 
   if (alreadyVoted) {
     btnA.disabled = true; btnB.disabled = true;
@@ -265,11 +278,33 @@ function showRevealed(sit, winningOption, company, player) {
   typeEl.className = `situation-type${sit.type === 'popup' ? ' popup' : ''}`;
   document.getElementById('sit-title-r').textContent = sit.title;
 
+  const rBtnA = document.getElementById('result-btn-a');
+  const rBtnB = document.getElementById('result-btn-b');
+
+  // No-vote penalty (X): company -10 each, KPI unchanged
+  if (winningOption === 'X') {
+    rBtnA.className = 'option-btn loser';
+    rBtnB.className = 'option-btn loser';
+    document.getElementById('res-a-title').textContent = sit.optionA.label;
+    document.getElementById('res-b-title').textContent = sit.optionB.label;
+
+    const myDeltaEl = document.getElementById('my-delta');
+    myDeltaEl.innerHTML = '<span class="delta-chip neu">ไม่มีการโหวต — KPI ไม่เปลี่ยนแปลง</span>';
+
+    const companyDeltasEl = document.getElementById('company-deltas');
+    companyDeltasEl.innerHTML = '';
+    for (const label of ['กระแสเงินสด', 'ความเชื่อมั่นแบรนด์', 'ขวัญกำลังใจ']) {
+      const c = document.createElement('span');
+      c.className = 'delta-chip neg';
+      c.textContent = `${label}: -10`;
+      companyDeltasEl.appendChild(c);
+    }
+    return;
+  }
+
   document.getElementById('res-a-title').textContent = sit.optionA.label;
   document.getElementById('res-b-title').textContent = sit.optionB.label;
 
-  const rBtnA = document.getElementById('result-btn-a');
-  const rBtnB = document.getElementById('result-btn-b');
   rBtnA.className = `option-btn ${winningOption === 'A' ? 'winner' : 'loser'}`;
   rBtnB.className = `option-btn ${winningOption === 'B' ? 'winner' : 'loser'}`;
 

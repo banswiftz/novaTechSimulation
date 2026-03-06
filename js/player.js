@@ -267,6 +267,17 @@ async function submitVote(choice) {
   document.getElementById('voted-notice').style.display = 'block';
   (choice === 'A' ? btnA : btnB).classList.add('selected');
   showToast('ส่งโหวตเรียบร้อยแล้ว!', 'success');
+
+  // ── Backup: send vote to Google Form ─────────────────────────
+  const sit = SITUATIONS[currentSitIdx];
+  const scenLabel = sit.type === 'popup' ? `P${sit.number}` : `S${sit.number}`;
+  const formBody = new URLSearchParams();
+  formBody.append('entry.973482943', String(groupNumber));
+  formBody.append('entry.1638356131', scenLabel);
+  formBody.append('entry.1554458861', choice);
+  fetch('https://docs.google.com/forms/d/e/1FAIpQLSfoBvjzVBohTmTaYp2YLV8Yvsvv_to-_Ok9DMwTAMFWnaLwcw/formResponse', {
+    method: 'POST', mode: 'no-cors', body: formBody,
+  }).catch(() => {});
 }
 
 // ── UI: Revealed ──────────────────────────────────────────────

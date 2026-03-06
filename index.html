@@ -26,20 +26,9 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="role-select">Select Your Role</label>
-            <select class="form-select" id="role-select">
-              <option value="" disabled selected>Choose a role...</option>
-              <option value="CFO">CFO — Chief Financial Officer</option>
-              <option value="CMO">CMO — Chief Marketing Officer</option>
-              <option value="COO">COO — Chief Operating Officer</option>
-              <option value="CHRO">CHRO — Chief Human Resources Officer</option>
-              <option value="CLO">CLO — Chief Legal Officer</option>
-            </select>
+            <label class="form-label" for="group-number">Group Number</label>
+            <input class="form-input" type="number" id="group-number" placeholder="e.g. 3" min="1" max="20" />
           </div>
-
-          <p id="role-taken-msg" style="display:none; color:#f05252; font-size:13px; margin-bottom:12px;">
-            That role is already taken. Please choose another.
-          </p>
 
           <button class="btn btn-primary btn-full" id="join-btn">Join Game</button>
           <p id="join-error" style="display:none; color:#f05252; font-size:13px; margin-top:10px;"></p>

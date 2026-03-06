@@ -319,3 +319,8 @@ body {
 .items-center { align-items: center; }
 .justify-between { justify-content: space-between; }
 .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* ---- Group cards (admin multi-group view) ---- */
+.group-card { transition: border-color .2s; }
+.group-card-danger { border-color: var(--danger) !important; }
+

@@ -46,7 +46,7 @@ let groupScores = {};     // group_number -> {cash_flow, brand_trust, employee_m
 let votes      = [];      // votes for current situation
 
 // ── DOM refs ─────────────────────────────────────────────────
-const advanceBtn       = document.getElementById('advance-btn');
+const jumpSelect       = document.getElementById('jump-select');
 const revealBtn        = document.getElementById('reveal-btn');
 const resetBtn         = document.getElementById('reset-btn');
 const phaseIndicator   = document.getElementById('phase-indicator');
@@ -63,6 +63,21 @@ const adminGoReason    = document.getElementById('admin-go-reason');
 
 // ── Init ─────────────────────────────────────────────────────
 async function initAdmin() {
+  // Populate situation selector once
+  SITUATIONS.forEach(sit => {
+    const opt = document.createElement('option');
+    opt.value = sit.index;
+    opt.textContent = sit.type === 'popup'
+      ? `เหตุการณ์พิเศษ ${sit.number}: ${sit.title}`
+      : `สถานการณ์ ${sit.number}: ${sit.title}`;
+    jumpSelect.appendChild(opt);
+  });
+  // "End game" option
+  const endOpt = document.createElement('option');
+  endOpt.value = SITUATIONS.length;
+  endOpt.textContent = '— จบเกม —';
+  jumpSelect.appendChild(endOpt);
+
   await loadAll();
   renderAll();
   subscribeToChanges();
@@ -214,9 +229,9 @@ function buildGroupCard(gNum) {
     ${sitIdx >= 0 && sitIdx < SITUATIONS.length ? `
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-size:13px;">
       <span style="color:var(--text-muted);">โหวต: ${voted}/${groupPlayers.length}</span>
-      <span>
+      <span style="display:flex; align-items:center; gap:6px;">
+        ${countA === countB && voted > 0 ? '<span style="background:#f59e0b; color:#000; font-size:11px; font-weight:700; padding:2px 7px; border-radius:4px;">⚖ เสมอกัน</span>' : ''}
         <span class="vote-badge a">A: ${countA}</span>
-        &nbsp;
         <span class="vote-badge b">B: ${countB}</span>
       </span>
     </div>` : ''}
@@ -284,33 +299,39 @@ function renderGameOver() {
 function updateButtons() {
   const sitIdx = gameState?.current_situation_index ?? -1;
   const phase  = gameState?.phase ?? 'waiting';
-  const ended  = sitIdx >= SITUATIONS.length;
 
-  advanceBtn.textContent = sitIdx === -1 ? 'เริ่มเกม' :
-    ended ? 'เกมจบแล้ว' : 'ไปสถานการณ์ถัดไป';
-  advanceBtn.disabled = ended || phase === 'voting';
+  // Sync the select to current state
+  jumpSelect.value = String(sitIdx);
+  jumpSelect.disabled = phase === 'voting';
 
   revealBtn.disabled = phase !== 'voting' || sitIdx < 0;
 }
 
-// ── Button handlers ───────────────────────────────────────────
-advanceBtn.addEventListener('click', async () => {
-  const sitIdx  = gameState?.current_situation_index ?? -1;
-  const nextIdx = sitIdx + 1;
+// ── Jump to situation ─────────────────────────────────────────
+jumpSelect.addEventListener('change', async () => {
+  const targetIdx = parseInt(jumpSelect.value);
+  if (isNaN(targetIdx)) return;
 
-  advanceBtn.disabled = true;
+  const currentIdx = gameState?.current_situation_index ?? -1;
+  if (targetIdx === currentIdx) return;
+
+  jumpSelect.disabled = true;
   const { error } = await supabase.from('game_state').update({
-    current_situation_index: nextIdx,
-    phase: nextIdx >= SITUATIONS.length ? 'ended' : 'voting',
+    current_situation_index: targetIdx,
+    phase: targetIdx >= SITUATIONS.length ? 'ended' : targetIdx === -1 ? 'waiting' : 'voting',
     updated_at: new Date().toISOString(),
   }).eq('id', 1);
 
-  if (error) { showToast('เกิดข้อผิดพลาด ไม่สามารถดำเนินเกมต่อได้', 'error'); advanceBtn.disabled = false; }
-  else {
+  if (error) {
+    showToast('เกิดข้อผิดพลาด ไม่สามารถเปลี่ยนสถานการณ์ได้', 'error');
+    jumpSelect.value = String(currentIdx);
+  } else {
     votes = [];
-    const label = nextIdx < SITUATIONS.length ? SITUATIONS[nextIdx].title : 'เกมจบแล้ว';
-    showToast(`ดำเนินต่อ: ${label}`, 'success');
+    const label = targetIdx >= SITUATIONS.length ? 'จบเกม' :
+      targetIdx === -1 ? 'ยังไม่เริ่ม' : SITUATIONS[targetIdx].title;
+    showToast(`เปลี่ยนไป: ${label}`, 'success');
   }
+  jumpSelect.disabled = false;
 });
 
 revealBtn.addEventListener('click', async () => {
@@ -330,7 +351,23 @@ revealBtn.addEventListener('click', async () => {
 
     const countA = groupVotes.filter(v => v.choice === 'A').length;
     const countB = groupVotes.filter(v => v.choice === 'B').length;
-    const winner = getWinner(countA, countB);
+
+    let winner;
+    if (countA === countB) {
+      // Tie — ask admin to break it
+      let choice = '';
+      while (choice !== 'A' && choice !== 'B') {
+        choice = (prompt(
+          `กลุ่ม ${gNum}: โหวตเสมอกัน (A: ${countA}, B: ${countB})\nกรุณาพิมพ์ A หรือ B เพื่อตัดสินผลของกลุ่มนี้:`
+        ) || '').trim().toUpperCase();
+        if (choice !== 'A' && choice !== 'B') {
+          alert('กรุณาพิมพ์ A หรือ B เท่านั้น');
+        }
+      }
+      winner = choice;
+    } else {
+      winner = getWinner(countA, countB);
+    }
 
     const currentKpis = {};
     for (const p of groupPlayers) currentKpis[p.role] = p.kpi_score;

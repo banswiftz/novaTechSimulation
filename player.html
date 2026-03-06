@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NovaTech — Player View</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <span class="brand">NovaTech</span>
+    <div class="player-info">
+      <span id="player-name-display" style="font-weight:600; font-size:14px;"></span>
+      <span id="role-badge" class="role-badge"></span>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- KPI + Company metrics row -->
+    <div style="display:grid; grid-template-columns: 160px 1fr; gap:16px; align-items:start; margin-bottom:20px;">
+      <!-- Personal KPI -->
+      <div class="card" style="padding:16px;">
+        <div class="card-title">My KPI Score</div>
+        <div class="kpi-display">
+          <div id="kpi-value" class="kpi-value high">50</div>
+          <div id="kpi-label" class="kpi-label">Financial Health</div>
+        </div>
+        <div id="fired-notice" style="display:none; text-align:center; margin-top:8px;">
+          <span style="color:#f05252; font-size:12px; font-weight:700;">FIRED</span>
+        </div>
+      </div>
+
+      <!-- Company metrics -->
+      <div class="card">
+        <div class="card-title">Company Scorecard</div>
+        <div class="metrics-row">
+          <div class="metric-card" id="metric-cash">
+            <div class="danger-badge">DANGER</div>
+            <div class="metric-val" id="cash-val">50</div>
+            <div class="metric-name">Cash Flow</div>
+          </div>
+          <div class="metric-card" id="metric-brand">
+            <div class="danger-badge">DANGER</div>
+            <div class="metric-val" id="brand-val">50</div>
+            <div class="metric-name">Brand Trust</div>
+          </div>
+          <div class="metric-card" id="metric-morale">
+            <div class="danger-badge">DANGER</div>
+            <div class="metric-val" id="morale-val">50</div>
+            <div class="metric-name">Employee Morale</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game over banner -->
+    <div class="game-over-banner" id="game-over-banner">
+      <div class="go-title">GAME OVER — Company Collapse</div>
+      <p id="game-over-reason">A company metric has dropped below the critical threshold.</p>
+    </div>
+
+    <!-- Main area -->
+    <div class="card" id="main-area">
+
+      <!-- State: waiting for game to start -->
+      <div id="state-lobby" class="waiting-state">
+        <div class="spinner"></div>
+        <p>Waiting for the facilitator to start the game...</p>
+      </div>
+
+      <!-- State: voting -->
+      <div id="state-voting" style="display:none;">
+        <div id="sit-type" class="situation-type">Situation</div>
+        <div id="sit-title" class="situation-title">Title</div>
+        <div id="sit-desc" class="situation-desc">Description</div>
+
+        <div class="options-grid" id="options-grid">
+          <button class="option-btn" id="btn-a" data-choice="A">
+            <div class="opt-label">Option A</div>
+            <div class="opt-title" id="opt-a-title"></div>
+            <div class="opt-desc"  id="opt-a-desc"></div>
+          </button>
+          <button class="option-btn" id="btn-b" data-choice="B">
+            <div class="opt-label">Option B</div>
+            <div class="opt-title" id="opt-b-title"></div>
+            <div class="opt-desc"  id="opt-b-desc"></div>
+          </button>
+        </div>
+
+        <div id="voted-notice" style="display:none; margin-top:16px; color:#8892a4; font-size:14px;">
+          Vote submitted. Waiting for others...
+        </div>
+      </div>
+
+      <!-- State: results revealed -->
+      <div id="state-revealed" style="display:none;">
+        <div id="sit-type-r" class="situation-type">Situation</div>
+        <div id="sit-title-r" class="situation-title">Title</div>
+
+        <div class="options-grid" style="margin-bottom:20px;">
+          <button class="option-btn" id="result-btn-a" disabled>
+            <div class="opt-label">Option A</div>
+            <div class="opt-title" id="res-a-title"></div>
+          </button>
+          <button class="option-btn" id="result-btn-b" disabled>
+            <div class="opt-label">Option B</div>
+            <div class="opt-title" id="res-b-title"></div>
+          </button>
+        </div>
+
+        <div id="outcome-section">
+          <div class="card-title">Score Changes</div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:13px; color:#8892a4; margin-bottom:6px;">Your KPI</div>
+            <div id="my-delta" class="delta-chips"></div>
+          </div>
+          <div>
+            <div style="font-size:13px; color:#8892a4; margin-bottom:6px;">Company</div>
+            <div id="company-deltas" class="delta-chips"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- State: end game -->
+      <div id="state-end" style="display:none;" class="end-screen">
+        <h2 id="end-headline">Simulation Complete</h2>
+        <p class="end-sub" id="end-sub">The boardroom crisis simulation has ended.</p>
+        <div id="final-scores" style="max-width:320px; margin:0 auto;"></div>
+        <p class="company-result" id="end-company-result"></p>
+      </div>
+
+    </div>
+
+    <!-- Progress indicator -->
+    <div class="mt-16">
+      <div class="progress-steps" id="progress-steps">
+        <div class="progress-step" data-idx="0">S1</div>
+        <div class="progress-step" data-idx="1">P1</div>
+        <div class="progress-step" data-idx="2">S2</div>
+        <div class="progress-step" data-idx="3">P2</div>
+        <div class="progress-step" data-idx="4">S3</div>
+        <div class="progress-step" data-idx="5">S4</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="toast-container"></div>
+  <script type="module" src="js/player.js"></script>
+</body>
+</html>

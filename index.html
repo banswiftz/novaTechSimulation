@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NovaTech — Join Game</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="join-screen">
+    <div class="join-box">
+      <div class="join-logo">NovaTech</div>
+      <p class="join-sub">Boardroom Crisis Simulation</p>
+
+      <div class="card">
+        <div id="waiting-for-game" style="display:none; text-align:center; padding: 24px 0;">
+          <div class="spinner" style="width:32px;height:32px;border:3px solid #2e3348;border-top-color:#4f8ef7;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px;"></div>
+          <p style="color:#8892a4;">Waiting for the facilitator to start the game...</p>
+          <p id="joined-as" style="margin-top:10px;font-size:13px;color:#8892a4;"></p>
+        </div>
+
+        <div id="join-form">
+          <div class="form-group">
+            <label class="form-label" for="player-name">Your Name</label>
+            <input class="form-input" type="text" id="player-name" placeholder="e.g. Siriporn" autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="role-select">Select Your Role</label>
+            <select class="form-select" id="role-select">
+              <option value="" disabled selected>Choose a role...</option>
+              <option value="CFO">CFO — Chief Financial Officer</option>
+              <option value="CMO">CMO — Chief Marketing Officer</option>
+              <option value="COO">COO — Chief Operating Officer</option>
+              <option value="CHRO">CHRO — Chief Human Resources Officer</option>
+              <option value="CLO">CLO — Chief Legal Officer</option>
+            </select>
+          </div>
+
+          <p id="role-taken-msg" style="display:none; color:#f05252; font-size:13px; margin-bottom:12px;">
+            That role is already taken. Please choose another.
+          </p>
+
+          <button class="btn btn-primary btn-full" id="join-btn">Join Game</button>
+          <p id="join-error" style="display:none; color:#f05252; font-size:13px; margin-top:10px;"></p>
+        </div>
+      </div>
+
+      <p class="text-muted text-center mt-16" style="font-size:12px;">
+        Facilitator? <a href="admin.html" style="color:#4f8ef7;">Open Admin Panel</a>
+      </p>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script type="module" src="js/join.js"></script>
+</body>
+</html>

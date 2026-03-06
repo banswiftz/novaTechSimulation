@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NovaTech — Facilitator Panel</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Password screen -->
+  <div class="auth-screen" id="auth-screen">
+    <div class="card auth-box">
+      <h1>Facilitator Panel</h1>
+      <p>Enter the admin password to continue.</p>
+      <div class="form-group">
+        <input class="form-input" type="password" id="admin-password" placeholder="Password" />
+      </div>
+      <p id="auth-error" style="display:none; color:#f05252; font-size:13px; margin-bottom:10px;"></p>
+      <button class="btn btn-primary btn-full" id="auth-btn">Enter</button>
+    </div>
+  </div>
+
+  <!-- Main admin UI (hidden until authenticated) -->
+  <div id="admin-ui" style="display:none;">
+
+    <div class="topbar">
+      <span class="brand">NovaTech — Facilitator</span>
+      <div class="flex items-center gap-8">
+        <span id="phase-indicator" style="font-size:13px; color:#8892a4;"></span>
+        <button class="btn btn-ghost btn-sm" id="reset-btn">Reset Game</button>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <!-- Game over banner -->
+      <div class="game-over-banner" id="admin-game-over">
+        <div class="go-title">GAME OVER — Company Collapse</div>
+        <p id="admin-go-reason"></p>
+      </div>
+
+      <div class="admin-layout">
+
+        <!-- LEFT: Game control -->
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-title">Game Control</div>
+
+            <!-- Progress breadcrumb -->
+            <div class="progress-steps" id="admin-progress" style="margin-bottom:16px;"></div>
+
+            <!-- Current situation info -->
+            <div id="current-sit-info" style="margin-bottom:16px;">
+              <div id="admin-sit-type" class="situation-type" style="margin-bottom:4px;"></div>
+              <div id="admin-sit-title" style="font-weight:700; font-size:16px; margin-bottom:4px;"></div>
+            </div>
+
+            <button class="btn btn-primary btn-full" id="advance-btn" style="margin-bottom:10px;">
+              Start Game / Advance
+            </button>
+
+            <button class="btn btn-success btn-full" id="reveal-btn" disabled style="margin-bottom:10px;">
+              Reveal Results &amp; Apply Scores
+            </button>
+
+            <div id="vote-count-summary" style="text-align:center; font-size:13px; color:#8892a4;"></div>
+          </div>
+
+          <!-- Manual score override -->
+          <div class="card">
+            <div class="card-title">Manual Score Override</div>
+            <p style="font-size:12px; color:#8892a4; margin-bottom:12px;">Adjust any score manually if needed.</p>
+
+            <div id="player-overrides"></div>
+
+            <hr class="divider" />
+
+            <div class="override-row">
+              <label>Cash Flow</label>
+              <input class="override-input" type="number" id="ov-cash" min="0" max="100" />
+              <button class="btn btn-ghost btn-sm" data-field="cash_flow" data-table="company">Set</button>
+            </div>
+            <div class="override-row">
+              <label>Brand Trust</label>
+              <input class="override-input" type="number" id="ov-brand" min="0" max="100" />
+              <button class="btn btn-ghost btn-sm" data-field="brand_trust" data-table="company">Set</button>
+            </div>
+            <div class="override-row">
+              <label>Employee Morale</label>
+              <input class="override-input" type="number" id="ov-morale" min="0" max="100" />
+              <button class="btn btn-ghost btn-sm" data-field="employee_morale" data-table="company">Set</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CENTER: Votes -->
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-title" style="display:flex; justify-content:space-between;">
+              <span>Current Votes</span>
+              <span id="vote-tally" style="color:#e8eaf0; font-weight:700;"></span>
+            </div>
+            <table class="vote-table">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Role</th>
+                  <th>Vote</th>
+                </tr>
+              </thead>
+              <tbody id="votes-tbody"></tbody>
+            </table>
+          </div>
+
+          <!-- Situation details -->
+          <div class="card" id="sit-detail-card" style="display:none;">
+            <div class="card-title">Decision Options</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div>
+                <div style="font-weight:700; color:#4f8ef7; margin-bottom:6px; font-size:13px;">Option A</div>
+                <div id="detail-a-title" style="font-weight:600; margin-bottom:4px; font-size:14px;"></div>
+                <div id="detail-a-impacts" class="delta-chips"></div>
+              </div>
+              <div>
+                <div style="font-weight:700; color:#4f8ef7; margin-bottom:6px; font-size:13px;">Option B</div>
+                <div id="detail-b-title" style="font-weight:600; margin-bottom:4px; font-size:14px;"></div>
+                <div id="detail-b-impacts" class="delta-chips"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Scoreboard -->
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-title">Player KPI Scores</div>
+            <div id="admin-player-scores"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Company Scorecard</div>
+            <div class="metrics-row" style="grid-template-columns:1fr; gap:8px;">
+              <div class="metric-card" id="admin-metric-cash">
+                <div class="danger-badge">DANGER</div>
+                <div class="metric-val" id="admin-cash-val">50</div>
+                <div class="metric-name">Cash Flow</div>
+              </div>
+              <div class="metric-card" id="admin-metric-brand">
+                <div class="danger-badge">DANGER</div>
+                <div class="metric-val" id="admin-brand-val">50</div>
+                <div class="metric-name">Brand Trust</div>
+              </div>
+              <div class="metric-card" id="admin-metric-morale">
+                <div class="danger-badge">DANGER</div>
+                <div class="metric-val" id="admin-morale-val">50</div>
+                <div class="metric-name">Employee Morale</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>

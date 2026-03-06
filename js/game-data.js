@@ -1,24 +1,24 @@
 // ============================================================
-// NovaTech Simulation — Game Data
-// All 6 situations in order: S1, P1, S2, P2, S3, S4
+// NovaTech Simulation — ข้อมูลเกม (ภาษาไทย)
+// ลำดับสถานการณ์: S1, P1, S2, P2, S3, S4
 // ============================================================
 
 export const ROLES = ['CFO', 'CMO', 'COO', 'CHRO', 'CLO'];
 
 export const ROLE_LABELS = {
-  CFO:  'Chief Financial Officer',
-  CMO:  'Chief Marketing Officer',
-  COO:  'Chief Operating Officer',
-  CHRO: 'Chief Human Resources Officer',
-  CLO:  'Chief Legal Officer',
+  CFO:  'ประธานเจ้าหน้าที่ฝ่ายการเงิน',
+  CMO:  'ประธานเจ้าหน้าที่ฝ่ายการตลาด',
+  COO:  'ประธานเจ้าหน้าที่ฝ่ายปฏิบัติการ',
+  CHRO: 'ประธานเจ้าหน้าที่ฝ่ายทรัพยากรบุคคล',
+  CLO:  'ประธานเจ้าหน้าที่ฝ่ายกฎหมาย',
 };
 
 export const ROLE_KPI_NAMES = {
-  CFO:  'Financial Health',
-  CMO:  'Brand Power',
-  COO:  'Efficiency & Tech',
-  CHRO: 'Talent Retention',
-  CLO:  'Legal & Compliance',
+  CFO:  'สุขภาพทางการเงิน',
+  CMO:  'พลังของแบรนด์',
+  COO:  'ประสิทธิภาพและระบบ',
+  CHRO: 'การรักษาบุคลากร',
+  CLO:  'ความถูกต้องทางกฎหมาย',
 };
 
 export const INITIAL_KPI = 50;
@@ -32,21 +32,26 @@ export const SITUATIONS = [
     index: 0,
     type: 'situation',
     number: 1,
-    title: 'Cash Flow Crunch',
+    title: 'วิกฤตยอดขายตกและกระแสเงินสดร่อยหรอ',
     description:
-      'A competitor has launched a "burn cash" strategy, capturing 30% of your users in just one month. ' +
-      'NovaTech has only 4 months of cash runway remaining. The board must decide how to respond.',
+      'คู่แข่งข้ามชาติเปิดตัวกลยุทธ์ "Burn Cash" กระโจนเข้าสู่ตลาด ปล่อยโปรโมชั่นแบบไม่สนกำไร ' +
+      'ภายในเดือนเดียว ผู้ใช้งานประจำของ NovaTech หายไปถึง 30% ' +
+      'รายงานบัญชีล่าสุดระบุว่า Cash Runway เหลือเพียง 4 เดือน ' +
+      'บอร์ดบริหารต้องตัดสินใจทันที — จะรัดเข็มขัดหรือทุ่มหมดหน้าตัก?',
     optionA: {
-      label: 'Austerity Measures',
+      label: 'รัดเข็มขัด ตัดงบ 50%',
       description:
-        'Cut the marketing budget by 50%, freeze all new projects, and reduce employee benefits to extend the runway.',
+        'ตัดงบการตลาดลงครึ่งหนึ่ง ชะลอโครงการใหม่ และลดสวัสดิการบางส่วน ' +
+        'เพื่อยืดเวลาหายใจออกไปได้อีกประมาณ 8 เดือน',
       company: { cash_flow: +10, brand_trust: -10, employee_morale: -10 },
       kpi: { CFO: +15, CMO: -20, COO: +0, CHRO: -10, CLO: +5 },
     },
     optionB: {
-      label: 'All-In Campaign',
+      label: 'ทุ่มหมดหน้าตัก จัดแคมเปญใหญ่',
       description:
-        'Spend remaining reserves on a massive marketing push and strategic partnerships to win back market share.',
+        'ใช้เงินก้อนสุดท้ายของบริษัทจัด Big Campaign ครั้งใหญ่ ' +
+        'อัดโปรโมชั่นการตลาดและความร่วมมือกับพาร์ตเนอร์ให้หนักที่สุด ' +
+        'เพื่อดึงผู้ใช้กลับมาในระยะเวลาอันสั้น นี่คือการเดิมพันแบบ All-in',
       company: { cash_flow: -20, brand_trust: +20, employee_morale: +5 },
       kpi: { CFO: -20, CMO: +20, COO: -5, CHRO: +5, CLO: -10 },
     },
@@ -57,21 +62,24 @@ export const SITUATIONS = [
     index: 1,
     type: 'popup',
     number: 1,
-    title: 'Viral Windfall',
+    title: 'ปรากฏการณ์ไวรัลข้ามคืน',
     description:
-      'A global influencer with 10M followers posted an organic review of NovaTech. Within 12 hours it went viral. ' +
-      'Pre-orders have spiked massively — but production and support teams cannot handle the volume.',
+      'อินฟลูเอนเซอร์ระดับโลก 10 ล้านฟอลโลเวอร์ โพสต์รีวิว NovaTech แบบออร์แกนิคโดยบริษัทไม่ได้จ้าง ' +
+      'ภายใน 12 ชั่วโมง คลิปกลายเป็นไวรัล ยอด Pre-order พุ่งทะลักจนเกินกำลังผลิตและทีม Support ' +
+      'ฝ่าย Operation แจ้งว่าหากเปิดรับออเดอร์ทั้งหมด ระบบอาจล่ม การส่งของล่าช้า บอร์ดต้องตัดสินใจทันที',
     optionA: {
-      label: 'Accept All Orders',
+      label: 'กอบโกยให้สุด เปิดรับออเดอร์ทั้งหมด',
       description:
-        'Maximize revenue opportunity. Push the operations team to work overtime and handle the surge.',
+        'เปิดรับออเดอร์ทุกรายการ โกยเงินสดเข้าบริษัทให้มากที่สุด ' +
+        'แล้วค่อยให้ฝ่ายผลิตและทีม Support เร่งทำงานล่วงเวลาเพื่อไล่ตามยอด',
       company: { cash_flow: +20, brand_trust: +10, employee_morale: -20 },
       kpi: { CFO: +15, CMO: +20, COO: -20, CHRO: -20, CLO: -5 },
     },
     optionB: {
-      label: 'Limit Orders (Sell Out)',
+      label: 'จำกัดออเดอร์ ประกาศ Sold Out ชั่วคราว',
       description:
-        'Cap orders at sustainable capacity to protect quality and employee wellness. Miss some revenue but protect operations.',
+        'จำกัดจำนวนออเดอร์เท่าที่ระบบรับได้ เพื่อรักษาคุณภาพบริการ ' +
+        'และไม่ให้พนักงานทำงานเกินกำลัง แม้จะเสียรายได้บางส่วน',
       company: { cash_flow: +5, brand_trust: +20, employee_morale: +10 },
       kpi: { CFO: -10, CMO: -15, COO: +15, CHRO: +15, CLO: +10 },
     },
@@ -82,21 +90,26 @@ export const SITUATIONS = [
     index: 2,
     type: 'situation',
     number: 2,
-    title: 'Legacy System Burnout',
+    title: 'หนี้กรรมทางเทคโนโลยีและพนักงานหมดไฟ',
     description:
-      'NovaTech\'s 8-year-old tech stack causes frequent system crashes. Engineers are working overnight constantly. ' +
-      'In the last 3 months, 20+ staff have resigned citing burnout. Something must change.',
+      'โครงสร้างพื้นฐานด้านไอทีของ NovaTech ถูกสร้างขึ้นตั้งแต่เริ่มสตาร์ทอัปเมื่อ 8 ปีก่อน ' +
+      'ระบบล่มในช่วง Peak เกิดขึ้นบ่อยขึ้น ทีมวิศวกรต้องแก้โค้ดฉุกเฉินจนถึงเช้าแทบทุกคืน ' +
+      'ฝ่าย HR พบใบลาออกจากพนักงานระดับท็อปกว่า 20 ใบ ทุกใบเขียนเหตุผลว่า "หมดไฟ (Burnout)" ' +
+      'พร้อมกันนั้น Vendor เสนอระบบ Cloud Automation ใหม่ที่แก้ปัญหาได้ แต่ต้องปลดพนักงาน 15%',
     optionA: {
-      label: 'Support Staff (Keep Old System)',
+      label: 'ประคองคนไว้ ใช้ระบบเดิมต่อ',
       description:
-        'Increase overtime pay, bonuses, and benefits to retain people. Keep the current system running longer.',
+        'เพิ่มค่าล่วงเวลา ปรับโบนัส และเพิ่มสวัสดิการชั่วคราว ' +
+        'เพื่อรักษาพนักงานไว้และซื้อเวลาให้ทีมงานหายใจได้บ้าง ' +
+        'แต่ระบบเก่าจะยังคงสร้างปัญหาต่อไป',
       company: { cash_flow: -15, brand_trust: -5, employee_morale: +20 },
       kpi: { CFO: -15, CMO: -5, COO: -20, CHRO: +20, CLO: -15 },
     },
     optionB: {
-      label: 'System Upgrade (Lay Off 15%)',
+      label: 'รีบก้าวสู่ระบบใหม่ ปลดพนักงาน 15%',
       description:
-        'Invest in cloud automation that reduces manual work. This requires laying off 15% of the workforce.',
+        'ลงทุนในระบบ Cloud Automation ใหม่ทันที ลด Downtime และเพิ่มประสิทธิภาพระยะยาว ' +
+        'แต่ต้องปลดพนักงานราว 15% ซึ่งอาจทำลายความเชื่อใจในองค์กร',
       company: { cash_flow: -20, brand_trust: +15, employee_morale: -25 },
       kpi: { CFO: -15, CMO: +10, COO: +25, CHRO: -25, CLO: +10 },
     },
@@ -107,21 +120,24 @@ export const SITUATIONS = [
     index: 3,
     type: 'popup',
     number: 2,
-    title: 'Angel Investor Grant',
+    title: 'ทุนให้เปล่าจากนักลงทุนพันธมิตร',
     description:
-      'A global social impact fund has awarded NovaTech a 50 million baht grant — with one condition: ' +
-      '100% must go to a single project (no splitting funds). The board must choose immediately.',
+      'กองทุนเพื่อสังคมระดับโลกมอบเงินให้เปล่า (Grant) มูลค่า 50 ล้านบาท ' +
+      'แต่มีเงื่อนไขสำคัญเพียงข้อเดียว: เงินทั้งหมดต้องถูกใช้กับโครงการเดียว 100% ห้ามแบ่งงบ ' +
+      'บอร์ดบริหารต้องตัดสินใจทันทีว่าจะทุ่มไปกับอะไร',
     optionA: {
-      label: 'Mega-Marketing Campaign',
+      label: 'โครงการ Mega-Marketing & Global PR',
       description:
-        'Build global brand awareness and attract B2B partnerships. Invest everything in marketing.',
+        'ทุ่มเงินทั้งหมดไปกับแคมเปญการตลาดระดับโลก สร้าง Brand Awareness ขนาดใหญ่ ' +
+        'หวังดึงลูกค้าระดับ B2B และพาร์ตเนอร์รายใหญ่เข้ามา',
       company: { cash_flow: 0, brand_trust: +25, employee_morale: 0 },
       kpi: { CFO: +5, CMO: +30, COO: -10, CHRO: -10, CLO: -10 },
     },
     optionB: {
-      label: 'Internal Overhaul',
+      label: 'โครงการ Internal Overhaul & Employee Wellness',
       description:
-        'Upgrade IT systems, implement a new compliance framework, and improve employee wellness programs.',
+        'นำเงินทั้งหมดไปยกระดับระบบภายใน อัปเกรดโครงสร้าง IT ' +
+        'จ้างที่ปรึกษากฎหมายวางระบบ Compliance ใหม่ และปรับปรุงสวัสดิการพนักงาน',
       company: { cash_flow: 0, brand_trust: +5, employee_morale: +25 },
       kpi: { CFO: -10, CMO: -20, COO: +20, CHRO: +20, CLO: +20 },
     },
@@ -132,22 +148,26 @@ export const SITUATIONS = [
     index: 4,
     type: 'situation',
     number: 3,
-    title: 'Data Breach Scandal',
+    title: 'วิกฤตข้อมูลหลุด สแกนดัลสะเทือนแบรนด์',
     description:
-      'Hackers have breached NovaTech\'s customer database — 10,000+ VIP records exposed. ' +
-      'They demand a 10M baht bitcoin ransom in 48 hours or they\'ll release the data. ' +
-      'Internally, it\'s known the company disabled a security feature to speed up processing (PDPA violation).',
+      'กลุ่มแฮกเกอร์เจาะระบบและดึงข้อมูลส่วนบุคคลของลูกค้า VIP กว่า 10,000 รายชื่อออกไปได้ ' +
+      'พวกเขาเรียกค่าไถ่ Bitcoin มูลค่า 10 ล้านบาท ภายใน 48 ชั่วโมง หากไม่จ่ายจะปล่อยข้อมูลลง Dark Web ' +
+      'ปัญหาคือ ทีมวิศวกรของ NovaTech เคยปิดระบบ Security Module ชั่วคราวเพื่อให้ระบบทำงานเร็วขึ้น ' +
+      'และไม่เคยเปิดกลับ — ซึ่งถือเป็นการละเมิด PDPA',
     optionA: {
-      label: 'Blame the Vendor',
+      label: 'โยนความผิดให้ Vendor เต็มรูปแบบ',
       description:
-        'Claim the vendor\'s CRM system was compromised and NovaTech is the victim. Avoid direct responsibility.',
+        'ประกาศว่าการรั่วไหลเกิดจาก Vendor ภายนอกที่พัฒนาระบบ CRM ' +
+        'และกำลังดำเนินการฟ้องร้องเพื่อเรียกค่าเสียหาย ' +
+        'แต่มีประวัติ Log ในระบบที่แสดงว่าบริษัทเองปิดระบบความปลอดภัยไว้',
       company: { cash_flow: 0, brand_trust: -30, employee_morale: -10 },
       kpi: { CFO: +10, CMO: -25, COO: -15, CHRO: -10, CLO: -30 },
     },
     optionB: {
-      label: 'Public Disclosure & Compensation',
+      label: 'แถลงการณ์ยอมรับและจ่ายชดเชยลูกค้า',
       description:
-        'Admit fault, publicly disclose the breach, compensate affected customers, and fully comply with PDPA.',
+        'ออกแถลงการณ์อย่างโปร่งใส ยอมรับว่าการรั่วไหลเกิดจากทั้ง Vendor และการตัดสินใจภายใน ' +
+        'พร้อมประกาศมาตรการเยียวยาลูกค้าที่ได้รับผลกระทบ และปฏิบัติตามหลัก PDPA อย่างเคร่งครัด',
       company: { cash_flow: -25, brand_trust: +15, employee_morale: +10 },
       kpi: { CFO: -25, CMO: +15, COO: 0, CHRO: +10, CLO: +15 },
     },
@@ -158,22 +178,26 @@ export const SITUATIONS = [
     index: 5,
     type: 'situation',
     number: 4,
-    title: 'Hostile Takeover',
+    title: 'ข้อเสนอควบรวมกิจการ เผชิญหน้าความโลภ',
     description:
-      'A major investment fund has offered to acquire NovaTech at 20% above market value. ' +
-      'Conditions: the NovaTech brand gets eliminated, 70% of staff will be laid off, ' +
-      'but each board member receives a 30M baht "golden parachute" severance package.',
+      'กลุ่มทุนยักษ์ใหญ่เสนอซื้อกิจการ NovaTech ทั้งบริษัทในราคาสูงกว่าราคาตลาดปัจจุบัน 20% ' +
+      'เงื่อนไขที่ซ่อนอยู่: แบรนด์ NovaTech จะถูกยุบถาวร พนักงานกว่า 70% ต้องถูกเลิกจ้าง ' +
+      'แต่บอร์ดบริหารชุดปัจจุบันจะได้รับเงินชดเชยพิเศษ คนละ 30 ล้านบาท (Golden Parachute) ' +
+      'นี่คือคำถามที่ตรงไปตรงมาที่สุด: "จะเลือกเอาตัวรอด… หรือเลือกสู้ต่อ"',
     optionA: {
-      label: 'Sell the Company',
+      label: 'โหวตขายกิจการ รับ Golden Parachute',
       description:
-        'Accept the offer. Executives take the golden parachute. The company dissolves but everyone walks away wealthy.',
+        'ยอมรับข้อเสนอการซื้อกิจการ ผู้บริหารได้รับเงินชดเชยก้อนใหญ่ ' +
+        'แต่ชื่อ NovaTech จะหายไปจากตลาด และพนักงานหลายร้อยชีวิตจะถูกทิ้งไว้ข้างหลัง',
       company: { cash_flow: 0, brand_trust: -50, employee_morale: -50 },
       kpi: { CFO: +30, CMO: +30, COO: +30, CHRO: +30, CLO: +30 },
     },
     optionB: {
-      label: 'Fight & Survive',
+      label: 'ปฏิเสธการขาย บอร์ดลดเงินเดือน 30% สู้ต่อ',
       description:
-        'Reject the takeover. Cut executive pay by 30% to preserve cash and rally the company to survive independently.',
+        'ปฏิเสธดีล และประกาศลดเงินเดือนตัวเอง 30% เพื่อประคองบริษัท ' +
+        'พิสูจน์ภาวะผู้นำและสร้างความเชื่อใจจากพนักงาน นักลงทุน และเจ้าหนี้ ' +
+        'แต่เส้นทางหลังจากนั้นจะไม่ง่ายเลย',
       company: { cash_flow: +20, brand_trust: +20, employee_morale: +25 },
       kpi: { CFO: -15, CMO: -15, COO: -15, CHRO: -15, CLO: -15 },
     },
@@ -181,16 +205,16 @@ export const SITUATIONS = [
 ];
 
 /**
- * Get the winning option label given vote counts.
- * Returns 'A' or 'B'. Tie goes to A.
+ * หาตัวเลือกที่ชนะจากคะแนนโหวต
+ * คืนค่า 'A' หรือ 'B' — ถ้าเท่ากันให้ A ชนะ
  */
 export function getWinner(votesForA, votesForB) {
   return votesForB > votesForA ? 'B' : 'A';
 }
 
 /**
- * Apply winning option impacts to current scores.
- * Returns { newPlayerScores, newCompany, playerDeltas, companyDeltas }
+ * คำนวณและอัปเดตคะแนนหลังเปิดผล
+ * คืนค่า { newPlayerScores, newCompany, playerDeltas, companyDeltas }
  */
 export function applyScores(situationIndex, winningOption, currentPlayerScores, currentCompany) {
   const sit = SITUATIONS[situationIndex];
@@ -218,7 +242,7 @@ export function applyScores(situationIndex, winningOption, currentPlayerScores, 
   return { newPlayerScores, newCompany, playerDeltas, companyDeltas };
 }
 
-/** Format a delta value as a string like "+15" or "-10" */
+/** แสดงค่าเปลี่ยนแปลงเช่น "+15" หรือ "-10" */
 export function fmtDelta(n) {
   return n > 0 ? `+${n}` : `${n}`;
 }

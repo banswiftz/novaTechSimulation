@@ -37,10 +37,34 @@ const stateEnd      = document.getElementById('state-end');
 const progressSteps = document.querySelectorAll('.progress-step');
 
 // ── Init header ───────────────────────────────────────────────
-nameDisplay.textContent = `${playerName} · Group ${groupNumber}`;
+nameDisplay.textContent = `${playerName} · กลุ่ม ${groupNumber}`;
 roleBadge.textContent   = playerRole || '';
 roleBadge.className     = `role-badge role-${playerRole}`;
 kpiLabel.textContent    = ROLE_KPI_NAMES[playerRole] || 'KPI Score';
+
+// ── Logout ────────────────────────────────────────────────────
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  if (!confirm('ออกจากเกม? คุณจะต้องเข้าร่วมใหม่อีกครั้ง')) return;
+  await supabase.from('votes').delete().eq('player_id', playerId);
+  await supabase.from('players').delete().eq('id', playerId);
+  clearSession();
+  window.location.href = 'index.html';
+});
+
+function clearSession() {
+  localStorage.removeItem('novatech_player_id');
+  localStorage.removeItem('novatech_player_role');
+  localStorage.removeItem('novatech_player_name');
+  localStorage.removeItem('novatech_group_number');
+}
+
+function showRemovedScreen(headline, sub) {
+  clearSession();
+  const overlay = document.getElementById('removed-overlay');
+  document.getElementById('removed-headline').textContent = headline;
+  document.getElementById('removed-sub').textContent = sub;
+  overlay.style.display = 'flex';
+}
 
 // ── Local state ──────────────────────────────────────────────
 let currentSitIdx   = -1;
@@ -67,11 +91,26 @@ function subscribeToChanges() {
   supabase.channel('player-watch')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, async payload => {
       const gs = payload.new;
+      // On game reset, check if we still exist
+      if (gs.current_situation_index === -1) {
+        const { data: stillExists } = await supabase.from('players').select('id').eq('id', playerId).maybeSingle();
+        if (!stillExists) {
+          showRemovedScreen('เกมถูกรีเซ็ต', 'ผู้ดำเนินเกมได้รีเซ็ตเกมแล้ว กรุณาเข้าร่วมใหม่อีกครั้ง');
+          return;
+        }
+      }
       const [{ data: company }, { data: player }] = await Promise.all([
         supabase.from('group_scores').select('*').eq('group_number', groupNumber).single(),
         supabase.from('players').select('*').eq('id', playerId).single(),
       ]);
       await applyGameState(gs, company, player);
+    })
+    // Detect when this player is removed by admin
+    .on('postgres_changes', {
+      event: 'DELETE', schema: 'public', table: 'players',
+      filter: `id=eq.${playerId}`
+    }, () => {
+      showRemovedScreen('คุณถูกนำออกจากเกม', 'ผู้ดำเนินเกมได้นำคุณออกจากเกมแล้ว คุณสามารถเข้าร่วมกลุ่มใหม่ได้');
     })
     .on('postgres_changes', {
       event: '*', schema: 'public', table: 'group_scores',
@@ -154,7 +193,7 @@ function showVoting(sit, alreadyVoted) {
   showState('voting');
 
   const typeEl = document.getElementById('sit-type');
-  typeEl.textContent = sit.type === 'popup' ? `Pop-up Event ${sit.number}` : `Situation ${sit.number}`;
+  typeEl.textContent = sit.type === 'popup' ? `เหตุการณ์พิเศษ ${sit.number}` : `สถานการณ์ ${sit.number}`;
   typeEl.className = `situation-type${sit.type === 'popup' ? ' popup' : ''}`;
 
   document.getElementById('sit-title').textContent    = sit.title;
@@ -195,7 +234,7 @@ async function submitVote(choice) {
   }, { onConflict: 'player_id,situation_index' });
 
   if (error) {
-    showToast('Failed to submit vote. Please try again.', 'error');
+    showToast('ไม่สามารถส่งโหวตได้ กรุณาลองใหม่อีกครั้ง', 'error');
     btnA.disabled = false; btnB.disabled = false;
     return;
   }
@@ -203,7 +242,7 @@ async function submitVote(choice) {
   myVote = choice;
   document.getElementById('voted-notice').style.display = 'block';
   (choice === 'A' ? btnA : btnB).classList.add('selected');
-  showToast('Vote submitted!', 'success');
+  showToast('ส่งโหวตเรียบร้อยแล้ว!', 'success');
 }
 
 // ── UI: Revealed ──────────────────────────────────────────────
@@ -211,7 +250,7 @@ function showRevealed(sit, winningOption, company, player) {
   showState('revealed');
 
   const typeEl = document.getElementById('sit-type-r');
-  typeEl.textContent = sit.type === 'popup' ? `Pop-up Event ${sit.number}` : `Situation ${sit.number}`;
+  typeEl.textContent = sit.type === 'popup' ? `เหตุการณ์พิเศษ ${sit.number}` : `สถานการณ์ ${sit.number}`;
   typeEl.className = `situation-type${sit.type === 'popup' ? ' popup' : ''}`;
   document.getElementById('sit-title-r').textContent = sit.title;
 
@@ -224,7 +263,7 @@ function showRevealed(sit, winningOption, company, player) {
   rBtnB.className = `option-btn ${winningOption === 'B' ? 'winner' : 'loser'}`;
 
   const chosenBtn = winningOption === 'A' ? rBtnA : rBtnB;
-  chosenBtn.querySelector('.opt-label').textContent = `Option ${winningOption} — YOUR GROUP CHOSE`;
+  chosenBtn.querySelector('.opt-label').textContent = `ตัวเลือก ${winningOption} — กลุ่มของคุณเลือก`;
 
   // My KPI delta
   const opt = winningOption === 'A' ? sit.optionA : sit.optionB;
@@ -239,7 +278,7 @@ function showRevealed(sit, winningOption, company, player) {
   // Company deltas
   const companyDeltasEl = document.getElementById('company-deltas');
   companyDeltasEl.innerHTML = '';
-  for (const [label, key] of [['Cash', 'cash_flow'], ['Brand', 'brand_trust'], ['Morale', 'employee_morale']]) {
+  for (const [label, key] of [['กระแสเงินสด', 'cash_flow'], ['ความเชื่อมั่นแบรนด์', 'brand_trust'], ['ขวัญกำลังใจ', 'employee_morale']]) {
     const val = opt.company[key] ?? 0;
     const c = document.createElement('span');
     c.className = `delta-chip ${val > 0 ? 'pos' : val < 0 ? 'neg' : 'neu'}`;
@@ -263,20 +302,20 @@ async function showEndScreen(player, company) {
     company.brand_trust > GAME_OVER_THRESHOLD &&
     company.employee_morale > GAME_OVER_THRESHOLD;
 
-  document.getElementById('end-headline').textContent = survived ? 'NovaTech Survived!' : 'NovaTech Collapsed';
+  document.getElementById('end-headline').textContent = survived ? 'NovaTech รอดพ้น!' : 'NovaTech ล้มเหลว';
   document.getElementById('end-sub').textContent = survived
-    ? 'Your group weathered all crises. Well done!'
-    : 'Your group could not survive the crises.';
+    ? 'กลุ่มของคุณผ่านพ้นวิกฤตทั้งหมดได้ ยอดเยี่ยมมาก!'
+    : 'กลุ่มของคุณไม่สามารถรับมือกับวิกฤตได้';
 
   const container = document.getElementById('final-scores');
-  container.innerHTML = `<div class="card-title" style="margin-bottom:10px;">Group ${groupNumber} — Final KPI Scores</div>`;
+  container.innerHTML = `<div class="card-title" style="margin-bottom:10px;">กลุ่ม ${groupNumber} — คะแนน KPI สุดท้าย</div>`;
   for (const p of (groupPlayers || [])) {
     const fired = p.kpi_score <= FIRED_THRESHOLD;
     const row = document.createElement('div');
     row.className = `score-row ${fired ? 'fired' : ''}`;
     row.innerHTML = `
       <span class="player-name">${p.name} <span style="font-size:12px;color:#8892a4;">(${p.role})</span>
-        ${fired ? '<span class="fired-tag">FIRED</span>' : ''}
+        ${fired ? '<span class="fired-tag">ถูกไล่ออก</span>' : ''}
       </span>
       <span class="score-num" style="color:${kpiColor(p.kpi_score)}">${p.kpi_score}</span>
     `;
@@ -285,7 +324,7 @@ async function showEndScreen(player, company) {
 
   if (company) {
     document.getElementById('end-company-result').textContent =
-      `Group ${groupNumber} final — Cash: ${company.cash_flow} | Brand: ${company.brand_trust} | Morale: ${company.employee_morale}`;
+      `กลุ่ม ${groupNumber} ผลสุดท้าย — เงินสด: ${company.cash_flow} | แบรนด์: ${company.brand_trust} | ขวัญกำลังใจ: ${company.employee_morale}`;
   }
 }
 
@@ -325,10 +364,10 @@ function updateCompany(company) {
   if (gameOver) {
     gameOverBanner.classList.add('show');
     const reasons = [];
-    if (company.cash_flow <= GAME_OVER_THRESHOLD)       reasons.push('Cash Flow');
-    if (company.brand_trust <= GAME_OVER_THRESHOLD)     reasons.push('Brand Trust');
-    if (company.employee_morale <= GAME_OVER_THRESHOLD) reasons.push('Employee Morale');
-    gameOverReason.textContent = `Critical metric dropped below ${GAME_OVER_THRESHOLD}: ${reasons.join(', ')}`;
+    if (company.cash_flow <= GAME_OVER_THRESHOLD)       reasons.push('กระแสเงินสด');
+    if (company.brand_trust <= GAME_OVER_THRESHOLD)     reasons.push('ความเชื่อมั่นแบรนด์');
+    if (company.employee_morale <= GAME_OVER_THRESHOLD) reasons.push('ขวัญกำลังใจ');
+    gameOverReason.textContent = `ดัชนีชี้วัดวิกฤตต่ำกว่า ${GAME_OVER_THRESHOLD}: ${reasons.join(', ')}`;
   }
 }
 

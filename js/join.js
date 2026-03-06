@@ -22,11 +22,11 @@ joinBtn.addEventListener('click', async () => {
 
   hideError();
 
-  if (!name)           { showError('Please enter your name.'); return; }
-  if (!group || group < 1) { showError('Please enter a valid group number.'); return; }
+  if (!name)           { showError('กรุณาใส่ชื่อของคุณ'); return; }
+  if (!group || group < 1) { showError('กรุณาใส่หมายเลขกลุ่มที่ถูกต้อง'); return; }
 
   joinBtn.disabled = true;
-  joinBtn.textContent = 'Joining...';
+  joinBtn.textContent = 'กำลังเข้าร่วม...';
 
   // Count current members in this group (with a lock-style re-check)
   const { data: groupMembers, error: fetchErr } = await supabase
@@ -36,12 +36,12 @@ joinBtn.addEventListener('click', async () => {
     .order('created_at');
 
   if (fetchErr) {
-    showError('Connection error. Please try again.');
+    showError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
     reset(); return;
   }
 
   if (groupMembers.length >= 5) {
-    showError(`Group ${group} is full (5/5). Please choose another group.`);
+    showError(`กลุ่มที่ ${group} เต็มแล้ว (5/5 คน) กรุณาเลือกกลุ่มอื่น`);
     reset(); return;
   }
 
@@ -56,7 +56,7 @@ joinBtn.addEventListener('click', async () => {
     .single();
 
   if (insertErr) {
-    showError('Failed to join. Please try again.');
+    showError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
     reset(); return;
   }
 
@@ -75,7 +75,7 @@ joinBtn.addEventListener('click', async () => {
   // Show waiting state
   joinForm.style.display    = 'none';
   waitingDiv.style.display  = 'block';
-  joinedAsP.textContent = `Group ${group} — ${player.name} (${player.role})`;
+  joinedAsP.textContent = `กลุ่มที่ ${group} — ${player.name} (${player.role})`;
 
   // Subscribe to game_state — redirect when game starts
   const channel = supabase
@@ -105,5 +105,5 @@ function hideError() {
 }
 function reset() {
   joinBtn.disabled = false;
-  joinBtn.textContent = 'Join Game';
+  joinBtn.textContent = 'เข้าร่วมเกม';
 }

@@ -31,7 +31,7 @@ authBtn.addEventListener('click', () => {
     adminUi.style.display    = 'block';
     initAdmin();
   } else {
-    authError.textContent = 'Incorrect password.';
+    authError.textContent = 'รหัสผ่านไม่ถูกต้อง';
     authError.style.display = 'block';
   }
 });
@@ -116,9 +116,9 @@ function renderSituationBar() {
   const sitIdx = gameState?.current_situation_index ?? -1;
   const phase  = gameState?.phase ?? 'waiting';
 
-  phaseIndicator.textContent = sitIdx === -1 ? 'Not started' :
-    sitIdx >= SITUATIONS.length ? 'Game ended' :
-    `Phase: ${phase.charAt(0).toUpperCase() + phase.slice(1)}`;
+  phaseIndicator.textContent = sitIdx === -1 ? 'ยังไม่เริ่ม' :
+    sitIdx >= SITUATIONS.length ? 'เกมจบแล้ว' :
+    `ระยะ: ${phase === 'voting' ? 'โหวต' : phase === 'revealed' ? 'เปิดผล' : phase}`;
 
   if (sitIdx < 0 || sitIdx >= SITUATIONS.length) {
     sitSummaryBar.style.display = 'none';
@@ -127,7 +127,7 @@ function renderSituationBar() {
 
   const sit = SITUATIONS[sitIdx];
   sitSummaryBar.style.display = 'block';
-  sitTypeBar.textContent  = sit.type === 'popup' ? `Pop-up Event ${sit.number}` : `Situation ${sit.number}`;
+  sitTypeBar.textContent  = sit.type === 'popup' ? `เหตุการณ์พิเศษ ${sit.number}` : `สถานการณ์ ${sit.number}`;
   sitTypeBar.className    = `situation-type${sit.type === 'popup' ? ' popup' : ''}`;
   sitTitleBar.textContent = sit.title;
 
@@ -187,8 +187,8 @@ function buildGroupCard(gNum) {
   card.innerHTML = `
     <!-- Header -->
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-      <div style="font-size:16px; font-weight:700;">Group ${gNum}</div>
-      <div style="font-size:12px; color:var(--text-muted);">${groupPlayers.length}/5 members</div>
+      <div style="font-size:16px; font-weight:700;">กลุ่ม ${gNum}</div>
+      <div style="font-size:12px; color:var(--text-muted);">${groupPlayers.length}/5 คน</div>
     </div>
 
     <!-- Company scores -->
@@ -196,24 +196,24 @@ function buildGroupCard(gNum) {
       <div class="metric-card ${cashDanger ? 'danger' : ''}" style="padding:10px 8px;">
         <div class="danger-badge">!</div>
         <div class="metric-val" style="font-size:20px; color:${metricColor(gs.cash_flow)}">${gs.cash_flow}</div>
-        <div class="metric-name">Cash</div>
+        <div class="metric-name">เงินสด</div>
       </div>
       <div class="metric-card ${brandDanger ? 'danger' : ''}" style="padding:10px 8px;">
         <div class="danger-badge">!</div>
         <div class="metric-val" style="font-size:20px; color:${metricColor(gs.brand_trust)}">${gs.brand_trust}</div>
-        <div class="metric-name">Brand</div>
+        <div class="metric-name">แบรนด์</div>
       </div>
       <div class="metric-card ${moraleDanger ? 'danger' : ''}" style="padding:10px 8px;">
         <div class="danger-badge">!</div>
         <div class="metric-val" style="font-size:20px; color:${metricColor(gs.employee_morale)}">${gs.employee_morale}</div>
-        <div class="metric-name">Morale</div>
+        <div class="metric-name">ขวัญกำลังใจ</div>
       </div>
     </div>
 
     <!-- Vote tally (only during active situation) -->
     ${sitIdx >= 0 && sitIdx < SITUATIONS.length ? `
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-size:13px;">
-      <span style="color:var(--text-muted);">Votes: ${voted}/${groupPlayers.length}</span>
+      <span style="color:var(--text-muted);">โหวต: ${voted}/${groupPlayers.length}</span>
       <span>
         <span class="vote-badge a">A: ${countA}</span>
         &nbsp;
@@ -225,10 +225,10 @@ function buildGroupCard(gNum) {
     <table class="vote-table" style="margin-bottom:8px;">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Role</th>
+          <th>ชื่อ</th>
+          <th>ตำแหน่ง</th>
           <th>KPI</th>
-          ${sitIdx >= 0 && sitIdx < SITUATIONS.length ? '<th>Vote</th>' : ''}
+          ${sitIdx >= 0 && sitIdx < SITUATIONS.length ? '<th>โหวต</th>' : ''}
           <th></th>
         </tr>
       </thead>
@@ -248,12 +248,12 @@ function buildGroupCard(gNum) {
               }</td>` : ''}
               <td>
                 <button class="btn btn-danger btn-sm remove-player-btn" data-id="${p.id}" style="padding:3px 8px; font-size:11px;">
-                  Remove
+                  นำออก
                 </button>
               </td>
             </tr>`;
         }).join('')}
-        ${groupPlayers.length === 0 ? '<tr><td colspan="5" style="color:#8892a4; text-align:center;">No members yet</td></tr>' : ''}
+        ${groupPlayers.length === 0 ? '<tr><td colspan="5" style="color:#8892a4; text-align:center;">ยังไม่มีสมาชิก</td></tr>' : ''}
       </tbody>
     </table>
   `;
@@ -271,11 +271,11 @@ function renderGameOver() {
     gs.cash_flow <= GAME_OVER_THRESHOLD ||
     gs.brand_trust <= GAME_OVER_THRESHOLD ||
     gs.employee_morale <= GAME_OVER_THRESHOLD
-  ).map(([gNum]) => `Group ${gNum}`);
+  ).map(([gNum]) => `กลุ่ม ${gNum}`);
 
   if (collapsingGroups.length > 0) {
     adminGameOver.classList.add('show');
-    adminGoReason.textContent = `Collapsed: ${collapsingGroups.join(', ')}`;
+    adminGoReason.textContent = `ล้มละลาย: ${collapsingGroups.join(', ')}`;
   } else {
     adminGameOver.classList.remove('show');
   }
@@ -286,8 +286,8 @@ function updateButtons() {
   const phase  = gameState?.phase ?? 'waiting';
   const ended  = sitIdx >= SITUATIONS.length;
 
-  advanceBtn.textContent = sitIdx === -1 ? 'Start Game' :
-    ended ? 'Game Ended' : 'Advance to Next Situation';
+  advanceBtn.textContent = sitIdx === -1 ? 'เริ่มเกม' :
+    ended ? 'เกมจบแล้ว' : 'ไปสถานการณ์ถัดไป';
   advanceBtn.disabled = ended || phase === 'voting';
 
   revealBtn.disabled = phase !== 'voting' || sitIdx < 0;
@@ -305,11 +305,11 @@ advanceBtn.addEventListener('click', async () => {
     updated_at: new Date().toISOString(),
   }).eq('id', 1);
 
-  if (error) { showToast('Failed to advance.', 'error'); advanceBtn.disabled = false; }
+  if (error) { showToast('เกิดข้อผิดพลาด ไม่สามารถดำเนินเกมต่อได้', 'error'); advanceBtn.disabled = false; }
   else {
     votes = [];
-    const label = nextIdx < SITUATIONS.length ? SITUATIONS[nextIdx].title : 'Game Ended';
-    showToast(`Advanced to: ${label}`, 'success');
+    const label = nextIdx < SITUATIONS.length ? SITUATIONS[nextIdx].title : 'เกมจบแล้ว';
+    showToast(`ดำเนินต่อ: ${label}`, 'success');
   }
 });
 
@@ -359,7 +359,7 @@ revealBtn.addEventListener('click', async () => {
     ]);
 
     const groupErrors = [companyRes, resultRes, ...playerResults].filter(r => r.error);
-    if (groupErrors.length > 0) errors.push(`Group ${gNum}`);
+    if (groupErrors.length > 0) errors.push(`กลุ่ม ${gNum}`);
     else {
       // Update local state
       groupScores[gNum] = newCompany;
@@ -374,9 +374,9 @@ revealBtn.addEventListener('click', async () => {
   }).eq('id', 1);
 
   if (errors.length > 0) {
-    showToast(`Score errors for: ${errors.join(', ')}`, 'error');
+    showToast(`เกิดข้อผิดพลาดกับคะแนน: ${errors.join(', ')}`, 'error');
   } else {
-    showToast(`Results revealed for all ${groups.length} groups!`, 'success');
+    showToast(`เปิดผลเรียบร้อย ทั้ง ${groups.length} กลุ่ม!`, 'success');
   }
 
   renderGroupCards();
@@ -384,7 +384,7 @@ revealBtn.addEventListener('click', async () => {
 });
 
 resetBtn.addEventListener('click', async () => {
-  if (!confirm('Reset the entire game? This deletes ALL players, votes, and scores.')) return;
+  if (!confirm('รีเซ็ตเกมทั้งหมด? การดำเนินการนี้จะลบผู้เล่น โหวต และคะแนนทั้งหมด')) return;
 
   await Promise.all([
     supabase.from('votes').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
@@ -403,12 +403,12 @@ resetBtn.addEventListener('click', async () => {
   groupScores = {};
   gameState   = { id: 1, current_situation_index: -1, phase: 'waiting' };
   renderAll();
-  showToast('Game reset.', 'success');
+  showToast('รีเซ็ตเกมเรียบร้อยแล้ว', 'success');
 });
 
 // ── Remove player ─────────────────────────────────────────────
 async function removePlayer(playerId) {
-  if (!confirm('Remove this player? Their votes will also be deleted.')) return;
+  if (!confirm('นำผู้เล่นออกจากเกม? โหวตของผู้เล่นคนนี้จะถูกลบด้วย')) return;
 
   await supabase.from('votes').delete().eq('player_id', playerId);
   await supabase.from('players').delete().eq('id', playerId);
@@ -416,7 +416,7 @@ async function removePlayer(playerId) {
   players = players.filter(p => p.id !== playerId);
   renderGroupCards();
   renderSituationBar();
-  showToast('Player removed.', 'success');
+  showToast('นำผู้เล่นออกเรียบร้อยแล้ว', 'success');
 }
 
 // ── Subscriptions ─────────────────────────────────────────────

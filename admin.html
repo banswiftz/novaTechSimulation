@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NovaTech — Facilitator Panel</title>
+  <title>NovaTech — หน้าผู้ดำเนินเกม</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -11,13 +11,13 @@
   <!-- Password screen -->
   <div class="auth-screen" id="auth-screen">
     <div class="card auth-box">
-      <h1>Facilitator Panel</h1>
-      <p>Enter the admin password to continue.</p>
+      <h1>หน้าผู้ดำเนินเกม</h1>
+      <p>กรุณาใส่รหัสผ่านเพื่อเข้าสู่ระบบ</p>
       <div class="form-group">
-        <input class="form-input" type="password" id="admin-password" placeholder="Password" />
+        <input class="form-input" type="password" id="admin-password" placeholder="รหัสผ่าน" />
       </div>
       <p id="auth-error" style="display:none; color:#f05252; font-size:13px; margin-bottom:10px;"></p>
-      <button class="btn btn-primary btn-full" id="auth-btn">Enter</button>
+      <button class="btn btn-primary btn-full" id="auth-btn">เข้าสู่ระบบ</button>
     </div>
   </div>
 
@@ -30,16 +30,16 @@
 
         <!-- Brand + progress -->
         <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-          <span style="font-size:16px; font-weight:700; color:var(--primary);">NovaTech — Facilitator</span>
+          <span style="font-size:16px; font-weight:700; color:var(--primary);">NovaTech — ผู้ดำเนินเกม</span>
           <div class="progress-steps" id="admin-progress"></div>
         </div>
 
         <!-- Controls -->
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <span id="phase-indicator" style="font-size:13px; color:var(--text-muted); margin-right:8px;"></span>
-          <button class="btn btn-primary" id="advance-btn">Start Game</button>
-          <button class="btn btn-success" id="reveal-btn" disabled>Reveal Results</button>
-          <button class="btn btn-ghost btn-sm" id="reset-btn">Reset Game</button>
+          <button class="btn btn-primary" id="advance-btn">เริ่มเกม</button>
+          <button class="btn btn-success" id="reveal-btn" disabled>เปิดผลและอัปเดตคะแนน</button>
+          <button class="btn btn-ghost btn-sm" id="reset-btn">รีเซ็ตเกม</button>
         </div>
       </div>
     </div>
@@ -47,7 +47,7 @@
     <!-- Game over banner -->
     <div style="max-width:1400px; margin:0 auto; padding:0 20px;">
       <div class="game-over-banner" id="admin-game-over" style="margin-top:16px;">
-        <div class="go-title">GAME OVER — One or more groups have collapsed!</div>
+        <div class="go-title">GAME OVER — บริษัทบางกลุ่มล้มละลาย!</div>
         <p id="admin-go-reason"></p>
       </div>
     </div>
@@ -60,7 +60,7 @@
           <span id="sit-title-bar" style="font-weight:700; font-size:15px; margin-left:8px;"></span>
         </div>
         <div style="margin-left:auto; font-size:13px; color:var(--text-muted);">
-          Total votes: <strong id="total-votes-bar" style="color:var(--text);">0</strong> /
+          โหวตรวม: <strong id="total-votes-bar" style="color:var(--text);">0</strong> /
           <strong id="total-possible-bar" style="color:var(--text);">0</strong>
         </div>
       </div>
@@ -69,8 +69,8 @@
     <!-- Group cards grid -->
     <div style="max-width:1400px; margin:0 auto; padding:20px;">
       <div id="no-groups-msg" style="text-align:center; padding:60px 20px; color:var(--text-muted);">
-        <p style="font-size:16px;">No players have joined yet.</p>
-        <p style="font-size:13px; margin-top:8px;">Share the link so participants can join their groups.</p>
+        <p style="font-size:16px;">ยังไม่มีผู้เล่นเข้าร่วม</p>
+        <p style="font-size:13px; margin-top:8px;">แชร์ลิงก์ให้ผู้เข้าร่วมเพื่อเข้าร่วมกลุ่มของตน</p>
       </div>
       <div id="groups-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:16px;"></div>
     </div>

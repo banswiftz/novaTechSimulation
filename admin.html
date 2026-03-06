@@ -37,8 +37,7 @@
         <!-- Controls -->
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <span id="phase-indicator" style="font-size:13px; color:var(--text-muted); margin-right:4px;"></span>
-          <span id="timer-display" style="font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; min-width:48px; display:none;"></span>
-          <select id="jump-select" style="background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:13px; cursor:pointer;">
+<select id="jump-select" style="background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:13px; cursor:pointer;">
             <option value="-1">— เลือกสถานการณ์ —</option>
           </select>
           <button class="btn btn-success" id="reveal-btn" disabled>เปิดผลและอัปเดตคะแนน</button>
@@ -87,13 +86,18 @@
       </div>
     </div>
 
-    <!-- Group cards grid -->
-    <div style="max-width:1400px; margin:0 auto; padding:20px;">
+    <!-- Groups table -->
+    <div style="max-width:1600px; margin:0 auto; padding:20px;">
       <div id="no-groups-msg" style="text-align:center; padding:60px 20px; color:var(--text-muted);">
         <p style="font-size:16px;">ยังไม่มีผู้เล่นเข้าร่วม</p>
         <p style="font-size:13px; margin-top:8px;">แชร์ลิงก์ให้ผู้เข้าร่วมเพื่อเข้าร่วมกลุ่มของตน</p>
       </div>
-      <div id="groups-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:16px;"></div>
+      <div style="overflow-x:auto;">
+        <table id="groups-table" class="vote-table" style="display:none; width:100%; min-width:860px; border-collapse:collapse;">
+          <thead id="groups-thead"></thead>
+          <tbody id="groups-tbody"></tbody>
+        </table>
+      </div>
     </div>
 
   </div>

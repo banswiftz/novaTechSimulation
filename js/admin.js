@@ -40,23 +40,17 @@ passInput.addEventListener('keydown', e => { if (e.key === 'Enter') authBtn.clic
 if (checkAuth()) initAdmin();
 
 // ── State ────────────────────────────────────────────────────
-let gameState  = null;
-let players    = [];      // all players across all groups
-let groupScores = {};     // group_number -> {cash_flow, brand_trust, employee_morale}
-let votes      = [];      // votes for current situation
-
-// ── Timer ─────────────────────────────────────────────────────
-// Discussion time per situation type (seconds)
-const SIT_DURATION = { situation: 10 * 60, popup: 5 * 60 };
-let timerInterval = null;
-let timerEndsAt   = null;
+let gameState   = null;
+let players     = [];      // all players across all groups
+let groupScores = {};      // group_number -> {cash_flow, brand_trust, employee_morale}
+let groupResults = {};     // group_number -> { situation_index -> winning_option }
+let votes       = [];      // votes for current situation
 
 // ── DOM refs ─────────────────────────────────────────────────
 const jumpSelect       = document.getElementById('jump-select');
 const revealBtn        = document.getElementById('reveal-btn');
 const resetBtn         = document.getElementById('reset-btn');
 const phaseIndicator   = document.getElementById('phase-indicator');
-const timerDisplay     = document.getElementById('timer-display');
 const adminProgress    = document.getElementById('admin-progress');
 const sitSummaryBar    = document.getElementById('sit-summary-bar');
 const sitTypeBar       = document.getElementById('sit-type-bar');
@@ -70,7 +64,9 @@ const sitDetailPanel   = document.getElementById('sit-detail-panel');
 const sitToggleBtn     = document.getElementById('sit-toggle-btn');
 const totalVotesBar    = document.getElementById('total-votes-bar');
 const totalPossibleBar = document.getElementById('total-possible-bar');
-const groupsGrid       = document.getElementById('groups-grid');
+const groupsTable      = document.getElementById('groups-table');
+const groupsThead      = document.getElementById('groups-thead');
+const groupsTbody      = document.getElementById('groups-tbody');
 const noGroupsMsg      = document.getElementById('no-groups-msg');
 const adminGameOver    = document.getElementById('admin-game-over');
 const adminGoReason    = document.getElementById('admin-go-reason');
@@ -105,16 +101,23 @@ async function initAdmin() {
 }
 
 async function loadAll() {
-  const [gsRes, playersRes, scoresRes] = await Promise.all([
+  const [gsRes, playersRes, scoresRes, resultsRes] = await Promise.all([
     supabase.from('game_state').select('*').eq('id', 1).single(),
     supabase.from('players').select('*').order('group_number').order('created_at'),
     supabase.from('group_scores').select('*'),
+    supabase.from('group_results').select('*'),
   ]);
   gameState = gsRes.data;
   players   = playersRes.data || [];
 
   groupScores = {};
   for (const s of (scoresRes.data || [])) groupScores[s.group_number] = s;
+
+  groupResults = {};
+  for (const r of (resultsRes.data || [])) {
+    if (!groupResults[r.group_number]) groupResults[r.group_number] = {};
+    groupResults[r.group_number][r.situation_index] = r.winning_option;
+  }
 
   if (gameState && gameState.current_situation_index >= 0) {
     await loadVotes(gameState.current_situation_index);
@@ -130,7 +133,7 @@ async function loadVotes(sitIdx) {
 function renderAll() {
   renderProgress();
   renderSituationBar();
-  renderGroupCards();
+  renderGroupTable();
   updateButtons();
   renderGameOver();
 }
@@ -158,7 +161,6 @@ function renderSituationBar() {
 
   if (sitIdx < 0 || sitIdx >= SITUATIONS.length) {
     sitSummaryBar.style.display = 'none';
-    stopTimer();
     return;
   }
 
@@ -183,152 +185,88 @@ function renderSituationBar() {
   totalPossibleBar.textContent = groups.length;
 }
 
-// ── Timer ──────────────────────────────────────────────────────
-function startTimer(sit) {
-  stopTimer();
-  const durationSec = SIT_DURATION[sit.type] ?? SIT_DURATION.situation;
-  timerEndsAt = Date.now() + durationSec * 1000;
-  timerDisplay.style.display = 'inline';
-  tickTimer();
-  timerInterval = setInterval(tickTimer, 1000);
-}
-
-function stopTimer() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  timerEndsAt   = null;
-  timerDisplay.style.display = 'none';
-}
-
-function tickTimer() {
-  if (!timerEndsAt) return;
-  const remaining = Math.max(0, Math.round((timerEndsAt - Date.now()) / 1000));
-  const m = String(Math.floor(remaining / 60)).padStart(2, '0');
-  const s = String(remaining % 60).padStart(2, '0');
-  timerDisplay.textContent = `⏱ ${m}:${s}`;
-  timerDisplay.style.color = remaining <= 120 ? '#f05252' : remaining <= 300 ? '#f59e0b' : 'var(--text)';
-  if (remaining === 0) stopTimer();
-}
-
 function getGroups() {
   const groupNums = [...new Set(players.map(p => p.group_number))].sort((a, b) => a - b);
   return groupNums;
 }
 
-function renderGroupCards() {
+function renderGroupTable() {
   const groups = getGroups();
-  noGroupsMsg.style.display  = groups.length === 0 ? 'block' : 'none';
-  groupsGrid.style.display   = groups.length === 0 ? 'none'  : 'grid';
+  noGroupsMsg.style.display   = groups.length === 0 ? 'block' : 'none';
+  groupsTable.style.display   = groups.length === 0 ? 'none'  : 'table';
 
-  // Rebuild all group cards (simple approach — fine for ≤20 groups)
-  groupsGrid.innerHTML = '';
+  // Header
+  groupsThead.innerHTML = `
+    <tr>
+      <th style="white-space:nowrap; text-align:left;">กลุ่ม</th>
+      ${SITUATIONS.map(sit => `<th style="text-align:center;">${sit.type === 'popup' ? `P${sit.number}` : `S${sit.number}`}</th>`).join('')}
+      <th style="text-align:center;">เงินสด</th>
+      <th style="text-align:center;">แบรนด์</th>
+      <th style="text-align:center;">ขวัญ</th>
+      ${ROLES.map(r => `<th style="text-align:center;">${r}</th>`).join('')}
+    </tr>`;
 
+  // Rows
+  groupsTbody.innerHTML = '';
   for (const gNum of groups) {
-    const card = buildGroupCard(gNum);
-    groupsGrid.appendChild(card);
+    groupsTbody.appendChild(buildGroupRow(gNum));
   }
 }
 
-function buildGroupCard(gNum) {
+function buildGroupRow(gNum) {
   const sitIdx = gameState?.current_situation_index ?? -1;
+  const phase  = gameState?.phase ?? 'waiting';
+  const gs     = groupScores[gNum] || { cash_flow: 50, brand_trust: 50, employee_morale: 50 };
+  const groupPlayers = players.filter(p => p.group_number === gNum);
+  const anyDanger = gs.cash_flow <= GAME_OVER_THRESHOLD || gs.brand_trust <= GAME_OVER_THRESHOLD || gs.employee_morale <= GAME_OVER_THRESHOLD;
 
-  const groupPlayers = players.filter(p => p.group_number === gNum).sort((a, b) => {
-    return ROLES.indexOf(a.role) - ROLES.indexOf(b.role);
-  });
+  const tr = document.createElement('tr');
+  if (anyDanger) tr.style.background = 'rgba(240,82,82,0.08)';
 
-  const gs = groupScores[gNum] || { cash_flow: 50, brand_trust: 50, employee_morale: 50 };
-  // Find the voter and their vote for this situation
-  const voter = groupPlayers.find(p => p.is_voter);
-  const voterVote = voter ? votes.find(v => v.player_id === voter.id) : null;
-  const voterChoice = voterVote?.choice ?? null;
+  // Situation cells
+  const sitCells = SITUATIONS.map(sit => {
+    const si  = sit.index;
+    const res = groupResults[gNum]?.[si];
+    if (res !== undefined) {
+      const color = res === 'A' ? '#4f8ef7' : res === 'B' ? '#f59e0b' : '#f05252';
+      return `<td style="text-align:center;"><span style="font-weight:700; color:${color};">${res}</span></td>`;
+    }
+    if (si === sitIdx && phase === 'voting') {
+      const voter     = groupPlayers.find(p => p.is_voter);
+      const voterVote = voter ? votes.find(v => v.player_id === voter.id) : null;
+      if (voterVote) {
+        const color = voterVote.choice === 'A' ? '#4f8ef7' : '#f59e0b';
+        return `<td style="text-align:center;"><span style="font-weight:700; color:${color};">${voterVote.choice}</span></td>`;
+      }
+      return `<td style="text-align:center; color:#8892a4; font-size:18px; line-height:1;">?</td>`;
+    }
+    return `<td></td>`;
+  }).join('');
 
-  // Company danger
-  const cashDanger   = gs.cash_flow <= GAME_OVER_THRESHOLD;
-  const brandDanger  = gs.brand_trust <= GAME_OVER_THRESHOLD;
-  const moraleDanger = gs.employee_morale <= GAME_OVER_THRESHOLD;
-  const anyDanger    = cashDanger || brandDanger || moraleDanger;
+  // Company metric cells
+  const metricCells = [gs.cash_flow, gs.brand_trust, gs.employee_morale].map(val =>
+    `<td style="text-align:center; font-weight:700; color:${metricColor(val)};">${val}</td>`
+  ).join('');
 
-  const card = document.createElement('div');
-  card.className = `card group-card ${anyDanger ? 'group-card-danger' : ''}`;
-  card.dataset.group = gNum;
+  // Role KPI cells
+  const roleCells = ROLES.map(role => {
+    const p = groupPlayers.find(pl => pl.role === role);
+    if (!p) return `<td style="text-align:center; color:#444;">—</td>`;
+    const fired = p.kpi_score <= FIRED_THRESHOLD;
+    const voterMark = p.is_voter ? ' ★' : '';
+    return `<td style="text-align:center;">
+      <span style="font-weight:700; color:${scoreColor(p.kpi_score)}; ${fired ? 'text-decoration:line-through;' : ''}" title="${p.name}${voterMark}">${p.kpi_score}</span>
+      <button class="remove-player-btn" data-id="${p.id}" style="background:none;border:none;cursor:pointer;color:#f05252;font-size:10px;padding:0 0 0 2px;opacity:0.5;" title="นำ ${p.name} ออก">✕</button>
+    </td>`;
+  }).join('');
 
-  card.innerHTML = `
-    <!-- Header -->
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-      <div style="font-size:16px; font-weight:700;">กลุ่ม ${gNum}</div>
-      <div style="font-size:12px; color:var(--text-muted);">${groupPlayers.length}/5 คน</div>
-    </div>
+  tr.innerHTML = `<td style="font-weight:700; white-space:nowrap; padding-right:8px;">กลุ่ม ${gNum}</td>${sitCells}${metricCells}${roleCells}`;
 
-    <!-- Company scores -->
-    <div class="metrics-row" style="margin-bottom:12px;">
-      <div class="metric-card ${cashDanger ? 'danger' : ''}" style="padding:10px 8px;">
-        <div class="danger-badge">!</div>
-        <div class="metric-val" style="font-size:20px; color:${metricColor(gs.cash_flow)}">${gs.cash_flow}</div>
-        <div class="metric-name">เงินสด</div>
-      </div>
-      <div class="metric-card ${brandDanger ? 'danger' : ''}" style="padding:10px 8px;">
-        <div class="danger-badge">!</div>
-        <div class="metric-val" style="font-size:20px; color:${metricColor(gs.brand_trust)}">${gs.brand_trust}</div>
-        <div class="metric-name">แบรนด์</div>
-      </div>
-      <div class="metric-card ${moraleDanger ? 'danger' : ''}" style="padding:10px 8px;">
-        <div class="danger-badge">!</div>
-        <div class="metric-val" style="font-size:20px; color:${metricColor(gs.employee_morale)}">${gs.employee_morale}</div>
-        <div class="metric-name">ขวัญกำลังใจ</div>
-      </div>
-    </div>
-
-    <!-- Vote status (only during active situation) -->
-    ${sitIdx >= 0 && sitIdx < SITUATIONS.length ? `
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-size:13px;">
-      <span style="color:var(--text-muted);">ผู้โหวต: ${voter ? voter.name : '—'}</span>
-      <span>
-        ${voterChoice
-          ? `<span class="vote-badge ${voterChoice.toLowerCase()}">โหวต ${voterChoice}</span>`
-          : '<span class="vote-badge wait">ยังไม่โหวต</span>'
-        }
-      </span>
-    </div>` : ''}
-
-    <!-- Players table -->
-    <table class="vote-table" style="margin-bottom:8px;">
-      <thead>
-        <tr>
-          <th>ชื่อ</th>
-          <th>ตำแหน่ง</th>
-          <th>KPI</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        ${groupPlayers.map(p => {
-          const fired = p.kpi_score <= FIRED_THRESHOLD;
-          const voterTag = p.is_voter
-            ? '<span style="background:#1e3a5f;color:#4f8ef7;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;">โหวต</span>'
-            : '';
-          return `
-            <tr>
-              <td style="font-weight:600; ${fired ? 'text-decoration:line-through;color:#666;' : ''}">${p.name}${voterTag}</td>
-              <td><span class="role-badge role-${p.role}" style="font-size:10px;">${p.role}</span></td>
-              <td style="font-weight:700; color:${scoreColor(p.kpi_score)}">${p.kpi_score}</td>
-              <td>
-                <button class="btn btn-danger btn-sm remove-player-btn" data-id="${p.id}" style="padding:3px 8px; font-size:11px;">
-                  นำออก
-                </button>
-              </td>
-            </tr>`;
-        }).join('')}
-        ${groupPlayers.length === 0 ? '<tr><td colspan="4" style="color:#8892a4; text-align:center;">ยังไม่มีสมาชิก</td></tr>' : ''}
-      </tbody>
-    </table>
-  `;
-
-  // Attach remove button events
-  card.querySelectorAll('.remove-player-btn').forEach(btn => {
+  tr.querySelectorAll('.remove-player-btn').forEach(btn => {
     btn.addEventListener('click', () => removePlayer(btn.dataset.id));
   });
 
-  return card;
+  return tr;
 }
 
 function renderGameOver() {
@@ -380,12 +318,6 @@ jumpSelect.addEventListener('change', async () => {
     const label = targetIdx >= SITUATIONS.length ? 'จบเกม' :
       targetIdx === -1 ? 'ยังไม่เริ่ม' : SITUATIONS[targetIdx].title;
     showToast(`เปลี่ยนไป: ${label}`, 'success');
-    // Start countdown when entering a voting situation
-    if (targetIdx >= 0 && targetIdx < SITUATIONS.length) {
-      startTimer(SITUATIONS[targetIdx]);
-    } else {
-      stopTimer();
-    }
   }
   jumpSelect.disabled = false;
 });
@@ -481,6 +413,8 @@ revealBtn.addEventListener('click', async () => {
     if (groupErrors.length > 0) errors.push(`กลุ่ม ${gNum}`);
     else {
       groupScores[gNum] = newCompany;
+      if (!groupResults[gNum]) groupResults[gNum] = {};
+      groupResults[gNum][sitIdx] = winner;
       if (newPlayerScores) {
         for (const p of groupPlayers) p.kpi_score = newPlayerScores[p.role];
       }
@@ -498,7 +432,7 @@ revealBtn.addEventListener('click', async () => {
     showToast(`เปิดผลเรียบร้อย ทั้ง ${groups.length} กลุ่ม!`, 'success');
   }
 
-  renderGroupCards();
+  renderGroupTable();
   renderGameOver();
 });
 
@@ -517,10 +451,11 @@ resetBtn.addEventListener('click', async () => {
     }).eq('id', 1),
   ]);
 
-  players     = [];
-  votes       = [];
-  groupScores = {};
-  gameState   = { id: 1, current_situation_index: -1, phase: 'waiting' };
+  players      = [];
+  votes        = [];
+  groupScores  = {};
+  groupResults = {};
+  gameState    = { id: 1, current_situation_index: -1, phase: 'waiting' };
   renderAll();
   showToast('รีเซ็ตเกมเรียบร้อยแล้ว', 'success');
 });
@@ -533,7 +468,7 @@ async function removePlayer(playerId) {
   await supabase.from('players').delete().eq('id', playerId);
 
   players = players.filter(p => p.id !== playerId);
-  renderGroupCards();
+  renderGroupTable();
   renderSituationBar();
   showToast('นำผู้เล่นออกเรียบร้อยแล้ว', 'success');
 }
@@ -553,13 +488,13 @@ function subscribeToChanges() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async () => {
       const { data } = await supabase.from('players').select('*').order('group_number').order('created_at');
       players = data || [];
-      renderGroupCards();
+      renderGroupTable();
       renderSituationBar();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, async () => {
       if (gameState && gameState.current_situation_index >= 0) {
         await loadVotes(gameState.current_situation_index);
-        renderGroupCards();
+        renderGroupTable();
         renderSituationBar();
         updateButtons();
       }
@@ -567,8 +502,15 @@ function subscribeToChanges() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'group_scores' }, payload => {
       if (payload.new?.group_number != null) {
         groupScores[payload.new.group_number] = payload.new;
-        renderGroupCards();
+        renderGroupTable();
         renderGameOver();
+      }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'group_results' }, payload => {
+      if (payload.new?.group_number != null) {
+        if (!groupResults[payload.new.group_number]) groupResults[payload.new.group_number] = {};
+        groupResults[payload.new.group_number][payload.new.situation_index] = payload.new.winning_option;
+        renderGroupTable();
       }
     })
     .subscribe();

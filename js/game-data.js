@@ -23,7 +23,7 @@ export const ROLE_KPI_NAMES = {
 
 export const INITIAL_KPI = 50;
 export const INITIAL_COMPANY = { cash_flow: 50, brand_trust: 50, employee_morale: 50 };
-export const GAME_OVER_THRESHOLD = 15;
+export const GAME_OVER_THRESHOLD = 0;
 export const FIRED_THRESHOLD = 0;
 
 export const SITUATIONS = [
@@ -168,7 +168,7 @@ export function applyScores(situationIndex, winningOption, currentPlayerScores, 
   for (const role of ROLES) {
     const delta = opt.kpi[role] ?? 0;
     playerDeltas[role] = delta;
-    newPlayerScores[role] = Math.max(0, (currentPlayerScores[role] ?? INITIAL_KPI) + delta);
+    newPlayerScores[role] = (currentPlayerScores[role] ?? INITIAL_KPI) + delta;
   }
 
   const companyDeltas = {
@@ -177,9 +177,9 @@ export function applyScores(situationIndex, winningOption, currentPlayerScores, 
     employee_morale: opt.company.employee_morale ?? 0,
   };
   const newCompany = {
-    cash_flow:       Math.max(0, (currentCompany.cash_flow ?? 50)       + companyDeltas.cash_flow),
-    brand_trust:     Math.max(0, (currentCompany.brand_trust ?? 50)     + companyDeltas.brand_trust),
-    employee_morale: Math.max(0, (currentCompany.employee_morale ?? 50) + companyDeltas.employee_morale),
+    cash_flow:       (currentCompany.cash_flow ?? 50)       + companyDeltas.cash_flow,
+    brand_trust:     (currentCompany.brand_trust ?? 50)     + companyDeltas.brand_trust,
+    employee_morale: (currentCompany.employee_morale ?? 50) + companyDeltas.employee_morale,
   };
 
   return { newPlayerScores, newCompany, playerDeltas, companyDeltas };

@@ -378,9 +378,9 @@ revealBtn.addEventListener('click', async () => {
       // No-vote penalty (X): company -10 each, KPI unchanged
       winner = 'X';
       newCompany      = {
-        cash_flow:       Math.max(0, currentCompany.cash_flow - 10),
-        brand_trust:     Math.max(0, currentCompany.brand_trust - 10),
-        employee_morale: Math.max(0, currentCompany.employee_morale - 10),
+        cash_flow:       currentCompany.cash_flow - 10,
+        brand_trust:     currentCompany.brand_trust - 10,
+        employee_morale: currentCompany.employee_morale - 10,
       };
       newPlayerScores = null;
       playerUpdates   = [];

@@ -121,6 +121,22 @@ async function loadAll() {
     groupResults[r.group_number][r.situation_index] = r.winning_option;
   }
 
+  // Ensure group_scores exist for all current groups to prevent silent update failures
+  const groupsToProvision = new Set(players.map(p => p.group_number));
+  const missingProvisions = [];
+  for (const gNum of groupsToProvision) {
+    if (!groupScores[gNum]) {
+      groupScores[gNum] = { cash_flow: 50, brand_trust: 50, employee_morale: 50 };
+      missingProvisions.push(
+        supabase.from('group_scores').upsert(
+          { group_number: gNum, cash_flow: 50, brand_trust: 50, employee_morale: 50 },
+          { onConflict: 'group_number' }
+        )
+      );
+    }
+  }
+  if (missingProvisions.length > 0) await Promise.all(missingProvisions);
+
   if (gameState && gameState.current_situation_index >= 0) {
     await loadVotes(gameState.current_situation_index);
   }
@@ -688,6 +704,8 @@ backBtn.addEventListener('click', async () => {
 
 // ── Subscriptions ─────────────────────────────────────────────
 function subscribeToChanges() {
+  let playersFetchTimeout = null;
+
   supabase.channel('admin-watch')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, async payload => {
       gameState = payload.new;
@@ -698,11 +716,14 @@ function subscribeToChanges() {
       }
       renderAll();
     })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async () => {
-      const { data } = await supabase.from('players').select('*').order('group_number').order('created_at');
-      players = data || [];
-      renderGroupTable();
-      renderSituationBar();
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => {
+      if (playersFetchTimeout) clearTimeout(playersFetchTimeout);
+      playersFetchTimeout = setTimeout(async () => {
+        const { data } = await supabase.from('players').select('*').order('group_number').order('created_at');
+        players = data || [];
+        renderGroupTable();
+        renderSituationBar();
+      }, 300);
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, async () => {
       if (gameState && gameState.current_situation_index >= 0) {

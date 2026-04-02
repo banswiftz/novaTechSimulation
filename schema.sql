@@ -71,9 +71,43 @@ CREATE TABLE public.votes (
 INSERT INTO public.game_state (id) VALUES (1);
 INSERT INTO public.company_scores (id) VALUES (1);
 
+-- ── RLS Policies (required for Supabase Realtime to work) ────
+ALTER TABLE public.game_state ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_read_game_state"  ON public.game_state FOR SELECT USING (true);
+CREATE POLICY "public_update_game_state" ON public.game_state FOR UPDATE USING (true);
+
+ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_read_players"   ON public.players FOR SELECT USING (true);
+CREATE POLICY "public_insert_players" ON public.players FOR INSERT WITH CHECK (true);
+CREATE POLICY "public_update_players" ON public.players FOR UPDATE USING (true);
+CREATE POLICY "public_delete_players" ON public.players FOR DELETE USING (true);
+
+ALTER TABLE public.votes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_read_votes"   ON public.votes FOR SELECT USING (true);
+CREATE POLICY "public_insert_votes" ON public.votes FOR INSERT WITH CHECK (true);
+CREATE POLICY "public_update_votes" ON public.votes FOR UPDATE USING (true);
+CREATE POLICY "public_delete_votes" ON public.votes FOR DELETE USING (true);
+
+ALTER TABLE public.company_scores ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_read_company_scores"   ON public.company_scores FOR SELECT USING (true);
+CREATE POLICY "public_update_company_scores" ON public.company_scores FOR UPDATE USING (true);
+
+ALTER TABLE public.group_scores ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_read_group_scores"   ON public.group_scores FOR SELECT USING (true);
+CREATE POLICY "public_insert_group_scores" ON public.group_scores FOR INSERT WITH CHECK (true);
+CREATE POLICY "public_update_group_scores" ON public.group_scores FOR UPDATE USING (true);
+CREATE POLICY "public_delete_group_scores" ON public.group_scores FOR DELETE USING (true);
+
+ALTER TABLE public.group_results ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_read_group_results"   ON public.group_results FOR SELECT USING (true);
+CREATE POLICY "public_insert_group_results" ON public.group_results FOR INSERT WITH CHECK (true);
+CREATE POLICY "public_update_group_results" ON public.group_results FOR UPDATE USING (true);
+CREATE POLICY "public_delete_group_results" ON public.group_results FOR DELETE USING (true);
+
 -- Turn on realtime for important tables
 ALTER PUBLICATION supabase_realtime ADD TABLE public.game_state;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.players;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.votes;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.company_scores;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.group_scores;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.group_results;

@@ -1,6 +1,6 @@
 // ============================================================
-// NovaTech Simulation — ข้อมูลเกม (ภาษาไทย)
-// ลำดับสถานการณ์: S1, P1, S2, S3
+// NovaTech Simulation — Game Data & Engine
+// Flow: S1 → S2 → P1 → S3 → P2 → S4
 // ============================================================
 
 export const ROLES = ['CFO', 'CMO', 'COO', 'CHRO', 'CLO'];
@@ -21,15 +21,12 @@ export const ROLE_KPI_NAMES = {
   CLO:  'ความถูกต้องทางกฎหมาย',
 };
 
-export const INITIAL_KPI = 50;
-export const INITIAL_COMPANY = { cash_flow: 50, brand_trust: 50, employee_morale: 50 };
-export const GAME_OVER_THRESHOLD = 0;
-export const FIRED_THRESHOLD = 0;
+// Ordered step IDs — this defines the game flow
+export const STEPS = ['S1', 'S2', 'P1', 'S3', 'P2', 'S4'];
 
-export const SITUATIONS = [
-  // ── Index 0 ─────────────────────────────────────────────
-  {
-    index: 0,
+export const STEP_DATA = {
+  // ── S1 ─────────────────────────────────────────────────
+  S1: {
     type: 'situation',
     number: 1,
     title: 'วิกฤตยอดขายตกและกระแสเงินสดร่อยหรอ',
@@ -43,8 +40,7 @@ export const SITUATIONS = [
       description:
         'ตัดงบการตลาดลงครึ่งหนึ่ง ชะลอโครงการใหม่ และลดสวัสดิการบางส่วน ' +
         'เพื่อยืดเวลาหายใจออกไปได้อีกประมาณ 8 เดือน',
-      company: { cash_flow: +10, brand_trust: -10, employee_morale: -10 },
-      kpi: { CFO: +15, CMO: -20, COO: +0, CHRO: -10, CLO: +5 },
+      deltas: { cash: 10, brand: -10, morale: -10, cfo: 15, cmo: -20, coo: 0, chro: -10, clo: 5 },
     },
     optionB: {
       label: 'ทุ่มหมดหน้าตัก จัดแคมเปญใหญ่',
@@ -52,42 +48,12 @@ export const SITUATIONS = [
         'ใช้เงินก้อนสุดท้ายของบริษัทจัด Big Campaign ครั้งใหญ่ ' +
         'อัดโปรโมชั่นการตลาดและความร่วมมือกับพาร์ตเนอร์ให้หนักที่สุด ' +
         'เพื่อดึงผู้ใช้กลับมาในระยะเวลาอันสั้น นี่คือการเดิมพันแบบ All-in',
-      company: { cash_flow: -20, brand_trust: +20, employee_morale: +5 },
-      kpi: { CFO: -20, CMO: +20, COO: -5, CHRO: +5, CLO: -10 },
+      deltas: { cash: -20, brand: 20, morale: 5, cfo: -20, cmo: 20, coo: -5, chro: 5, clo: -10 },
     },
   },
 
-  // ── Index 1 ─────────────────────────────────────────────
-  {
-    index: 1,
-    type: 'popup',
-    number: 1,
-    title: 'ปรากฏการณ์ไวรัลข้ามคืน',
-    description:
-      'อินฟลูเอนเซอร์ระดับโลก 10 ล้านฟอลโลเวอร์ โพสต์รีวิว NovaTech แบบออร์แกนิคโดยบริษัทไม่ได้จ้าง ' +
-      'ภายใน 12 ชั่วโมง คลิปกลายเป็นไวรัล ยอด Pre-order พุ่งทะลักจนเกินกำลังผลิตและทีม Support ' +
-      'ฝ่าย Operation แจ้งว่าหากเปิดรับออเดอร์ทั้งหมด ระบบอาจล่ม การส่งของล่าช้า บอร์ดต้องตัดสินใจทันที',
-    optionA: {
-      label: 'กอบโกยให้สุด เปิดรับออเดอร์ทั้งหมด',
-      description:
-        'เปิดรับออเดอร์ทุกรายการ โกยเงินสดเข้าบริษัทให้มากที่สุด ' +
-        'แล้วค่อยให้ฝ่ายผลิตและทีม Support เร่งทำงานล่วงเวลาเพื่อไล่ตามยอด',
-      company: { cash_flow: +20, brand_trust: +10, employee_morale: -20 },
-      kpi: { CFO: +15, CMO: +20, COO: -20, CHRO: -20, CLO: -5 },
-    },
-    optionB: {
-      label: 'จำกัดออเดอร์ ประกาศ Sold Out ชั่วคราว',
-      description:
-        'จำกัดจำนวนออเดอร์เท่าที่ระบบรับได้ เพื่อรักษาคุณภาพบริการ ' +
-        'และไม่ให้พนักงานทำงานเกินกำลัง แม้จะเสียรายได้บางส่วน',
-      company: { cash_flow: +5, brand_trust: +20, employee_morale: +10 },
-      kpi: { CFO: -10, CMO: -15, COO: +15, CHRO: +15, CLO: +10 },
-    },
-  },
-
-  // ── Index 2 ─────────────────────────────────────────────
-  {
-    index: 2,
+  // ── S2 ─────────────────────────────────────────────────
+  S2: {
     type: 'situation',
     number: 2,
     title: 'หนี้กรรมทางเทคโนโลยีและพนักงานหมดไฟ',
@@ -102,22 +68,44 @@ export const SITUATIONS = [
         'เพิ่มค่าล่วงเวลา ปรับโบนัส และเพิ่มสวัสดิการชั่วคราว ' +
         'เพื่อรักษาพนักงานไว้และซื้อเวลาให้ทีมงานหายใจได้บ้าง ' +
         'แต่ระบบเก่าจะยังคงสร้างปัญหาต่อไป',
-      company: { cash_flow: -15, brand_trust: -5, employee_morale: +20 },
-      kpi: { CFO: -15, CMO: -5, COO: -20, CHRO: +20, CLO: -15 },
+      deltas: { cash: -15, brand: -5, morale: 20, cfo: -15, cmo: -5, coo: -20, chro: 20, clo: -15 },
     },
     optionB: {
       label: 'รีบก้าวสู่ระบบใหม่ ปลดพนักงาน 15%',
       description:
         'ลงทุนในระบบ Cloud Automation ใหม่ทันที ลด Downtime และเพิ่มประสิทธิภาพระยะยาว ' +
         'แต่ต้องปลดพนักงานราว 15% ซึ่งอาจทำลายความเชื่อใจในองค์กร',
-      company: { cash_flow: -20, brand_trust: +15, employee_morale: -25 },
-      kpi: { CFO: -15, CMO: +10, COO: +25, CHRO: -25, CLO: +10 },
+      deltas: { cash: -20, brand: 15, morale: -25, cfo: -15, cmo: 10, coo: 25, chro: -25, clo: 10 },
     },
   },
 
-  // ── Index 3 ─────────────────────────────────────────────
-  {
-    index: 3,
+  // ── P1 (Pop-up Event 1) ────────────────────────────────
+  P1: {
+    type: 'popup',
+    number: 1,
+    title: 'ปรากฏการณ์ไวรัลข้ามคืน',
+    description:
+      'อินฟลูเอนเซอร์ระดับโลก 10 ล้านฟอลโลเวอร์ โพสต์รีวิว NovaTech แบบออร์แกนิคโดยบริษัทไม่ได้จ้าง ' +
+      'ภายใน 12 ชั่วโมง คลิปกลายเป็นไวรัล ยอด Pre-order พุ่งทะลักจนเกินกำลังผลิตและทีม Support ' +
+      'ฝ่าย Operation แจ้งว่าหากเปิดรับออเดอร์ทั้งหมด ระบบอาจล่ม การส่งของล่าช้า บอร์ดต้องตัดสินใจทันที',
+    optionA: {
+      label: 'กอบโกยให้สุด เปิดรับออเดอร์ทั้งหมด',
+      description:
+        'เปิดรับออเดอร์ทุกรายการ โกยเงินสดเข้าบริษัทให้มากที่สุด ' +
+        'แล้วค่อยให้ฝ่ายผลิตและทีม Support เร่งทำงานล่วงเวลาเพื่อไล่ตามยอด',
+      deltas: { cash: 20, brand: 10, morale: -20, cfo: 15, cmo: 20, coo: -20, chro: -20, clo: -5 },
+    },
+    optionB: {
+      label: 'จำกัดออเดอร์ ประกาศ Sold Out ชั่วคราว',
+      description:
+        'จำกัดจำนวนออเดอร์เท่าที่ระบบรับได้ เพื่อรักษาคุณภาพบริการ ' +
+        'และไม่ให้พนักงานทำงานเกินกำลัง แม้จะเสียรายได้บางส่วน',
+      deltas: { cash: 5, brand: 20, morale: 10, cfo: -10, cmo: -15, coo: 15, chro: 15, clo: 10 },
+    },
+  },
+
+  // ── S3 ─────────────────────────────────────────────────
+  S3: {
     type: 'situation',
     number: 3,
     title: 'วิกฤตข้อมูลหลุด สแกนดัลสะเทือนแบรนด์',
@@ -132,60 +120,122 @@ export const SITUATIONS = [
         'ประกาศว่าการรั่วไหลเกิดจาก Vendor ภายนอกที่พัฒนาระบบ CRM ' +
         'และกำลังดำเนินการฟ้องร้องเพื่อเรียกค่าเสียหาย ' +
         'แต่มีประวัติ Log ในระบบที่แสดงว่าบริษัทเองปิดระบบความปลอดภัยไว้',
-      company: { cash_flow: 0, brand_trust: -30, employee_morale: -10 },
-      kpi: { CFO: +10, CMO: -25, COO: -15, CHRO: -10, CLO: -30 },
+      deltas: { cash: 0, brand: -30, morale: -10, cfo: 10, cmo: -25, coo: -15, chro: -10, clo: -30 },
     },
     optionB: {
       label: 'แถลงการณ์ยอมรับและจ่ายชดเชยลูกค้า',
       description:
         'ออกแถลงการณ์อย่างโปร่งใส ยอมรับว่าการรั่วไหลเกิดจากทั้ง Vendor และการตัดสินใจภายใน ' +
         'พร้อมประกาศมาตรการเยียวยาลูกค้าที่ได้รับผลกระทบ และปฏิบัติตามหลัก PDPA อย่างเคร่งครัด',
-      company: { cash_flow: -25, brand_trust: +15, employee_morale: +10 },
-      kpi: { CFO: -25, CMO: +15, COO: 0, CHRO: +10, CLO: +15 },
+      deltas: { cash: -25, brand: 15, morale: 10, cfo: -25, cmo: 15, coo: 0, chro: 10, clo: 15 },
     },
   },
 
-];
+  // ── P2 (Pop-up Event 2) ────────────────────────────────
+  P2: {
+    type: 'popup',
+    number: 2,
+    title: 'ทุนให้เปล่าจากนักลงทุนพันธมิตร',
+    description:
+      'กองทุนเพื่อสังคมระดับโลกแห่งหนึ่ง ประทับใจในวิสัยทัศน์และศักยภาพระยะยาวของ NovaTech ' +
+      'จึงตัดสินใจมอบเงินให้เปล่า (Grant) มูลค่า 50 ล้านบาท ' +
+      'แต่มีเงื่อนไขสำคัญ: เงินทั้งหมดต้องถูกใช้กับโครงการเดียว 100% ห้ามแบ่งงบ ' +
+      'แต่ละแผนกต่างเสนอเหตุผลว่าทำไมเงินนี้ควรเป็นของพวกเขา',
+    optionA: {
+      label: 'ทุ่มงบการตลาด Mega-Marketing & Global PR',
+      description:
+        'ทุ่มเงินทั้งหมดไปกับแคมเปญการตลาดระดับโลก สร้าง Brand Awareness ขนาดใหญ่ ' +
+        'หวังดึงลูกค้าระดับ B2B และพาร์ตเนอร์รายใหญ่เข้ามา',
+      deltas: { cash: 0, brand: 25, morale: 0, cfo: 5, cmo: 30, coo: -10, chro: -10, clo: -10 },
+    },
+    optionB: {
+      label: 'ทุ่มงบรื้อระบบหลังบ้าน และสวัสดิการ',
+      description:
+        'นำเงินทั้งหมดไปยกระดับระบบภายใน อัปเกรดโครงสร้าง IT ' +
+        'จ้างที่ปรึกษากฎหมายมาวางระบบ Compliance ใหม่ และปรับปรุงสวัสดิการพนักงาน',
+      deltas: { cash: 0, brand: 5, morale: 25, cfo: -10, cmo: -20, coo: 20, chro: 20, clo: 20 },
+    },
+  },
+
+  // ── S4 ─────────────────────────────────────────────────
+  S4: {
+    type: 'situation',
+    number: 4,
+    title: 'ข้อเสนอควบรวมกิจการ เผชิญหน้าความโลภ',
+    description:
+      'กลุ่มทุนยักษ์ใหญ่ระดับประเทศเสนอซื้อกิจการ NovaTech ทั้งบริษัท ในราคาสูงกว่าตลาด 20% ' +
+      'พร้อมอัดฉีดเงินทุนและล้างหนี้ทั้งหมด แต่เงื่อนไขคือ: แบรนด์ NovaTech จะถูกยุบถาวร ' +
+      'พนักงานกว่า 70% ถูกเลิกจ้าง และบอร์ดบริหารจะได้รับเงินชดเชยพิเศษคนละ 30 ล้านบาท ' +
+      'นี่คือคำถามที่ตรงไปตรงมา — จะเลือกเอาตัวรอด หรือเลือกสู้ต่อ?',
+    optionA: {
+      label: 'โหวตขายกิจการ',
+      description:
+        'ยอมรับข้อเสนอการซื้อกิจการ ผู้ถือหุ้นได้ผลตอบแทน ผู้บริหารได้รับเงินชดเชยก้อนใหญ่ ' +
+        'แต่ชื่อ NovaTech จะหายไปจากตลาด และพนักงานหลายร้อยชีวิตจะถูกทิ้งไว้ข้างหลัง',
+      deltas: { cash: 0, brand: -50, morale: -50, cfo: 30, cmo: 30, coo: 30, chro: 30, clo: 30 },
+    },
+    optionB: {
+      label: 'ปฏิเสธการขาย และสู้ต่อ',
+      description:
+        'ปฏิเสธดีล ประกาศลดเงินเดือนตัวเอง 30% เพื่อประคองบริษัท ' +
+        'สร้างความเชื่อใจจากพนักงานและพิสูจน์ภาวะผู้นำ แต่เส้นทางข้างหน้าจะไม่ง่ายเลย',
+      deltas: { cash: 20, brand: 20, morale: 25, cfo: -15, cmo: -15, coo: -15, chro: -15, clo: -15 },
+    },
+  },
+};
+
+// KPI field names matching the DB columns
+export const KPI_FIELDS = ['cash', 'brand', 'morale', 'cfo', 'cmo', 'coo', 'chro', 'clo'];
+export const COMPANY_FIELDS = ['cash', 'brand', 'morale'];
+export const ROLE_FIELDS = ['cfo', 'cmo', 'coo', 'chro', 'clo'];
+
+export const KPI_LABELS = {
+  cash: 'กระแสเงินสด',
+  brand: 'ความเชื่อมั่นแบรนด์',
+  morale: 'ขวัญกำลังใจ',
+  cfo: 'CFO',
+  cmo: 'CMO',
+  coo: 'COO',
+  chro: 'CHRO',
+  clo: 'CLO',
+};
 
 /**
- * หาตัวเลือกที่ชนะจากคะแนนโหวต
- * คืนค่า 'A' หรือ 'B' — ถ้าเท่ากันให้ A ชนะ
+ * Apply a choice to the current state and return new KPI values.
+ * Does NOT mutate the input.
  */
-export function getWinner(votesForA, votesForB) {
-  return votesForB > votesForA ? 'B' : 'A';
-}
-
-/**
- * คำนวณและอัปเดตคะแนนหลังเปิดผล
- * คืนค่า { newPlayerScores, newCompany, playerDeltas, companyDeltas }
- */
-export function applyScores(situationIndex, winningOption, currentPlayerScores, currentCompany) {
-  const sit = SITUATIONS[situationIndex];
-  const opt = winningOption === 'A' ? sit.optionA : sit.optionB;
-
-  const playerDeltas = {};
-  const newPlayerScores = {};
-  for (const role of ROLES) {
-    const delta = opt.kpi[role] ?? 0;
-    playerDeltas[role] = delta;
-    newPlayerScores[role] = (currentPlayerScores[role] ?? INITIAL_KPI) + delta;
+export function applyChoice(state, stepId, choice) {
+  const step = STEP_DATA[stepId];
+  if (!step) return null;
+  const opt = choice === 'A' ? step.optionA : step.optionB;
+  const result = {};
+  for (const field of KPI_FIELDS) {
+    result[field] = (state[field] ?? 50) + (opt.deltas[field] ?? 0);
   }
-
-  const companyDeltas = {
-    cash_flow:       opt.company.cash_flow ?? 0,
-    brand_trust:     opt.company.brand_trust ?? 0,
-    employee_morale: opt.company.employee_morale ?? 0,
-  };
-  const newCompany = {
-    cash_flow:       (currentCompany.cash_flow ?? 50)       + companyDeltas.cash_flow,
-    brand_trust:     (currentCompany.brand_trust ?? 50)     + companyDeltas.brand_trust,
-    employee_morale: (currentCompany.employee_morale ?? 50) + companyDeltas.employee_morale,
-  };
-
-  return { newPlayerScores, newCompany, playerDeltas, companyDeltas };
+  return result;
 }
 
-/** แสดงค่าเปลี่ยนแปลงเช่น "+15" หรือ "-10" */
+/**
+ * Get the next step ID, or 'ended' if at the last step.
+ */
+export function getNextStep(currentStep) {
+  const idx = STEPS.indexOf(currentStep);
+  if (idx === -1 || idx >= STEPS.length - 1) return 'ended';
+  return STEPS[idx + 1];
+}
+
+/**
+ * Get step label for display.
+ */
+export function getStepLabel(stepId) {
+  const step = STEP_DATA[stepId];
+  if (!step) return stepId;
+  return step.type === 'popup'
+    ? `เหตุการณ์พิเศษ ${step.number}`
+    : `สถานการณ์ ${step.number}`;
+}
+
+/** Format delta: "+15" or "-10" */
 export function fmtDelta(n) {
   return n > 0 ? `+${n}` : `${n}`;
 }

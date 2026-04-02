@@ -256,7 +256,7 @@ function showConsultingDeltas() {
 
   for (const [el, opt] of [[deltasA, sit.optionA], [deltasB, sit.optionB]]) {
     el.innerHTML = '<div style="font-size:11px; color:#4f8ef7; font-weight:700; margin-bottom:4px;">📊 ผลกระทบบริษัท:</div>';
-    for (const [name, key] of Object.entries(labels)) {
+    for (const [key, name] of Object.entries(labels)) {
       const val = opt.company[key] ?? 0;
       const cls = val > 0 ? 'pos' : val < 0 ? 'neg' : 'neu';
       el.innerHTML += `<span class="delta-chip ${cls}" style="margin:2px; font-size:11px;">${name}: ${fmtDelta(val)}</span>`;

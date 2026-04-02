@@ -159,6 +159,11 @@ function subscribeToChanges() {
       const { data } = await supabase.from('group_cards').select('*').eq('group_number', groupNumber);
       groupCards = data || [];
       renderCardsPanel();
+      // If consulting report was just used, show deltas on voting screen
+      const consultingUsed = groupCards.find(c => c.card_type === 'consulting_report' && c.is_used);
+      if (consultingUsed && currentSitIdx >= 0 && currentSitIdx < SITUATIONS.length) {
+        showConsultingDeltas();
+      }
     })
     .subscribe((status, err) => {
       console.log('[Player Realtime]', status, err || '');
@@ -229,28 +234,42 @@ function activateConsultingReport() {
   if (!sit) return;
 
   cardModalTitle.textContent = '📊 รายงานบริษัทที่ปรึกษา';
-  cardModalDesc.textContent = 'ผลกระทบต่อ KPI บริษัทของแต่ละตัวเลือก:';
-
-  const labels = { cash_flow: 'เงินสด', brand_trust: 'แบรนด์', employee_morale: 'ขวัญกำลังใจ' };
-  let html = '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">';
-
-  for (const [label, opt] of [['ตัวเลือก A', sit.optionA], ['ตัวเลือก B', sit.optionB]]) {
-    html += `<div style="background:var(--surface2); border-radius:8px; padding:12px;">
-      <div style="font-weight:700; margin-bottom:8px; font-size:13px;">${label}: ${opt.label}</div>`;
-    for (const [name, key] of Object.entries(labels)) {
-      const val = opt.company[key] ?? 0;
-      const cls = val > 0 ? 'pos' : val < 0 ? 'neg' : 'neu';
-      html += `<span class="delta-chip ${cls}" style="margin:2px; font-size:11px;">${name}: ${fmtDelta(val)}</span>`;
-    }
-    html += '</div>';
-  }
-  html += '</div>';
-  cardModalBody.innerHTML = html;
+  cardModalDesc.textContent = 'ยืนยันเปิดเผยผลกระทบ KPI บริษัทของทั้ง 2 ตัวเลือกให้ทั้งกลุ่มเห็น?';
+  cardModalBody.innerHTML = '<p style="color:#4f8ef7; font-size:13px;">ข้อมูลจะแสดงบนหน้าโหวตของทุกคนในกลุ่ม</p>';
 
   showCardModal(async () => {
     await markCardUsed('consulting_report');
-    showToast('📊 เปิดเผยข้อมูลจากที่ปรึกษาแล้ว', 'success');
+    showConsultingDeltas(); // Show immediately for voter
+    showToast('📊 เปิดเผยข้อมูลจากที่ปรึกษาแล้ว — ทุกคนในกลุ่มเห็น', 'success');
   });
+}
+
+/** Show company KPI deltas on option A/B buttons */
+function showConsultingDeltas() {
+  const sit = SITUATIONS[currentSitIdx];
+  if (!sit) return;
+
+  const labels = { cash_flow: 'เงินสด', brand_trust: 'แบรนด์', employee_morale: 'ขวัญกำลังใจ' };
+  const deltasA = document.getElementById('opt-a-deltas');
+  const deltasB = document.getElementById('opt-b-deltas');
+  if (!deltasA || !deltasB) return;
+
+  for (const [el, opt] of [[deltasA, sit.optionA], [deltasB, sit.optionB]]) {
+    el.innerHTML = '<div style="font-size:11px; color:#4f8ef7; font-weight:700; margin-bottom:4px;">📊 ผลกระทบบริษัท:</div>';
+    for (const [name, key] of Object.entries(labels)) {
+      const val = opt.company[key] ?? 0;
+      const cls = val > 0 ? 'pos' : val < 0 ? 'neg' : 'neu';
+      el.innerHTML += `<span class="delta-chip ${cls}" style="margin:2px; font-size:11px;">${name}: ${fmtDelta(val)}</span>`;
+    }
+  }
+}
+
+/** Clear consulting deltas from option buttons */
+function clearConsultingDeltas() {
+  const deltasA = document.getElementById('opt-a-deltas');
+  const deltasB = document.getElementById('opt-b-deltas');
+  if (deltasA) deltasA.innerHTML = '';
+  if (deltasB) deltasB.innerHTML = '';
 }
 
 // -- Shadow Capital Injection --
@@ -430,6 +449,13 @@ function showVoting(sit, alreadyVoted) {
   document.getElementById('opt-a-desc').textContent   = sit.optionA.description;
   document.getElementById('opt-b-title').textContent  = sit.optionB.label;
   document.getElementById('opt-b-desc').textContent   = sit.optionB.description;
+
+  // Check if Consulting Report card is used → show deltas for all members
+  clearConsultingDeltas();
+  const consultingCard = groupCards.find(c => c.card_type === 'consulting_report' && c.is_used);
+  if (consultingCard) {
+    showConsultingDeltas();
+  }
 
   const optionsGrid = document.getElementById('options-grid');
   const btnA = document.getElementById('btn-a');

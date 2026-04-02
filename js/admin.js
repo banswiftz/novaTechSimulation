@@ -427,31 +427,6 @@ revealBtn.addEventListener('click', async () => {
       for (const p of groupPlayers) currentKpis[p.role] = p.kpi_score;
       ({ newCompany, newPlayerScores } = applyScores(sitIdx, winner, currentKpis, currentCompany));
 
-      // ── Card effects ─────────────────────────────────────
-      const { data: cards } = await supabase.from('group_cards')
-        .select('*').eq('group_number', gNum).eq('is_used', true);
-
-      // Shadow Capital: clamp company KPIs to >= 0
-      // Check used_at_situation (set by markCardUsed) matches current situation
-      const shadowCard = (cards || []).find(c =>
-        c.card_type === 'shadow_capital' && c.used_at_situation === sitIdx
-      );
-      if (shadowCard) {
-        newCompany.cash_flow       = Math.max(0, newCompany.cash_flow);
-        newCompany.brand_trust     = Math.max(0, newCompany.brand_trust);
-        newCompany.employee_morale = Math.max(0, newCompany.employee_morale);
-      }
-
-      // Employee Shield: clamp target player's KPI to >= 0
-      const shieldCard = (cards || []).find(c => c.card_type === 'employee_shield');
-      if (shieldCard && shieldCard.card_metadata?.target_player_id) {
-        const targetId = shieldCard.card_metadata.target_player_id;
-        const targetPlayer = groupPlayers.find(p => p.id === targetId);
-        if (targetPlayer && newPlayerScores[targetPlayer.role] < 0) {
-          newPlayerScores[targetPlayer.role] = 0;
-        }
-      }
-
       playerUpdates = groupPlayers.map(p =>
         supabase.from('players').update({ kpi_score: newPlayerScores[p.role] }).eq('id', p.id)
       );

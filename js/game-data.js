@@ -253,14 +253,6 @@ export const SPECIAL_CARDS = {
     icon: '📊',
     useDuring: 'voting',
   },
-  shadow_capital: {
-    id: 'shadow_capital',
-    name: 'Shadow Capital Injection',
-    nameTh: 'ฉีดทุนลับ',
-    description: 'ป้องกันไม่ให้ KPI บริษัททุกตัวต่ำกว่า 0 ในรอบนี้',
-    icon: '💰',
-    useDuring: 'voting',
-  },
   global_pr: {
     id: 'global_pr',
     name: 'Global PR Blitz',
@@ -270,19 +262,10 @@ export const SPECIAL_CARDS = {
     useDuring: 'anytime',
     requiresTarget: 'company_kpi',
   },
-  employee_shield: {
-    id: 'employee_shield',
-    name: 'Employee Shield Policy',
-    nameTh: 'นโยบายคุ้มครองพนักงาน',
-    description: 'ป้องกันผู้เล่น 1 คนจากการถูกไล่ออก (KPI จะไม่ต่ำกว่า 0)',
-    icon: '🛡️',
-    useDuring: 'anytime',
-    requiresTarget: 'player',
-  },
 };
 
 export const ALL_CARD_IDS = Object.keys(SPECIAL_CARDS);
-export const MAX_CARDS_PER_GROUP = 2;
+export const MAX_CARDS_PER_GROUP = 1;
 
 /** แสดงค่าเปลี่ยนแปลงเช่น "+15" หรือ "-10" */
 export function fmtDelta(n) {

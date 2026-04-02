@@ -219,12 +219,8 @@ async function activateCard(cardType) {
 
   if (cardType === 'consulting_report') {
     activateConsultingReport();
-  } else if (cardType === 'shadow_capital') {
-    activateShadowCapital();
   } else if (cardType === 'global_pr') {
     activateGlobalPR();
-  } else if (cardType === 'employee_shield') {
-    activateEmployeeShield();
   }
 }
 
@@ -272,18 +268,6 @@ function clearConsultingDeltas() {
   if (deltasB) deltasB.innerHTML = '';
 }
 
-// -- Shadow Capital Injection --
-function activateShadowCapital() {
-  cardModalTitle.textContent = '💰 ฉีดทุนลับ';
-  cardModalDesc.textContent = 'ป้องกันไม่ให้ KPI บริษัททุกตัวต่ำกว่า 0 ในรอบนี้';
-  cardModalBody.innerHTML = '<p style="color:#f59e0b; font-size:13px;">เมื่อเปิดผลรอบนี้ ถ้า KPI บริษัทจะติดลบ จะถูกหยุดไว้ที่ 0</p>';
-
-  showCardModal(async () => {
-    await markCardUsed('shadow_capital', { applied_at_situation: currentSitIdx });
-    showToast('💰 ฉีดทุนลับเรียบร้อย — จะป้องกันตอนเปิดผลรอบนี้', 'success');
-  });
-}
-
 // -- Global PR Blitz --
 function activateGlobalPR() {
   cardModalTitle.textContent = '📢 แคมเปญ PR ระดับโลก';
@@ -317,37 +301,6 @@ function activateGlobalPR() {
 
     const label = options.find(o => o.key === targetKpi)?.label || targetKpi;
     showToast(`📢 ${label} +20 เรียบร้อย!`, 'success');
-  });
-}
-
-// -- Employee Shield Policy --
-async function activateEmployeeShield() {
-  cardModalTitle.textContent = '🛡️ นโยบายคุ้มครองพนักงาน';
-  cardModalDesc.textContent = 'เลือกผู้เล่น 1 คนที่ต้องการคุ้มครอง (KPI จะไม่ต่ำกว่า 0):';
-
-  const { data: groupPlayers } = await supabase
-    .from('players').select('*')
-    .eq('group_number', groupNumber)
-    .order('created_at');
-
-  if (!groupPlayers || groupPlayers.length === 0) return;
-
-  cardModalBody.innerHTML = groupPlayers.map(p =>
-    `<label style="display:flex; align-items:center; gap:8px; padding:8px; cursor:pointer; border-radius:6px; margin-bottom:4px; background:var(--surface2);">
-      <input type="radio" name="shield-target" value="${p.id}" style="accent-color:var(--primary);" />
-      <span style="font-size:14px;">${p.name} (${p.role}) — KPI: ${p.kpi_score}</span>
-    </label>`
-  ).join('');
-
-  showCardModal(async () => {
-    const selected = cardModalBody.querySelector('input[name="shield-target"]:checked');
-    if (!selected) { showToast('กรุณาเลือกผู้เล่นที่ต้องการคุ้มครอง', 'error'); return; }
-
-    const targetId = selected.value;
-    const targetPlayer = groupPlayers.find(p => p.id === targetId);
-    await markCardUsed('employee_shield', { target_player_id: targetId });
-
-    showToast(`🛡️ คุ้มครอง ${targetPlayer?.name || 'ผู้เล่น'} เรียบร้อย`, 'success');
   });
 }
 

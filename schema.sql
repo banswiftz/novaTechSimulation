@@ -50,8 +50,11 @@ CREATE TABLE public.players (
   created_at timestamp with time zone DEFAULT now(),
   group_number integer NOT NULL DEFAULT 1,
   is_voter boolean NOT NULL DEFAULT false,
-  CONSTRAINT players_pkey PRIMARY KEY (id)
+  CONSTRAINT players_pkey PRIMARY KEY (id),
+  CONSTRAINT players_group_number_role_key UNIQUE (group_number, role)
 );
+
+CREATE UNIQUE INDEX one_voter_per_group ON public.players (group_number) WHERE is_voter = true;
 
 CREATE TABLE public.votes (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -60,7 +63,8 @@ CREATE TABLE public.votes (
   choice text NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT votes_pkey PRIMARY KEY (id),
-  CONSTRAINT votes_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
+  CONSTRAINT votes_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id),
+  CONSTRAINT votes_player_id_situation_index_key UNIQUE (player_id, situation_index)
 );
 
 -- Insert default rows

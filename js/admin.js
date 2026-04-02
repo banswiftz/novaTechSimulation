@@ -747,7 +747,15 @@ function subscribeToChanges() {
         renderGroupTable();
       }
     })
-    .subscribe();
+    .subscribe((status, err) => {
+      console.log('[Admin Realtime]', status, err || '');
+      if (status === 'SUBSCRIBED') {
+        console.log('[Admin Realtime] ✅ Connected — realtime is working');
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.error('[Admin Realtime] ❌ Connection failed:', status, err);
+        showToast('Realtime ไม่สามารถเชื่อมต่อได้ — กรุณารีเฟรช', 'error');
+      }
+    });
 }
 
 // ── Helpers ───────────────────────────────────────────────────

@@ -140,7 +140,15 @@ function subscribeToChanges() {
         showRevealed(SITUATIONS[currentSitIdx], result.winning_option, company, player);
       }
     })
-    .subscribe();
+    .subscribe((status, err) => {
+      console.log('[Player Realtime]', status, err || '');
+      if (status === 'SUBSCRIBED') {
+        console.log('[Player Realtime] ✅ Connected — realtime is working');
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.error('[Player Realtime] ❌ Connection failed:', status, err);
+        showToast('Realtime ไม่สามารถเชื่อมต่อได้ — กรุณารีเฟรช', 'error');
+      }
+    });
 }
 
 // ── Apply game state ──────────────────────────────────────────

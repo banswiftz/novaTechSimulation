@@ -112,7 +112,12 @@ joinBtn.addEventListener('click', async () => {
         window.location.href = 'player.html';
       }
     })
-    .subscribe();
+    .subscribe((status, err) => {
+      console.log('[Join Realtime]', status, err || '');
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.error('[Join Realtime] ❌ Connection failed:', status, err);
+      }
+    });
 
   // Also check if game already started
   const { data: gs } = await supabase.from('game_state').select('*').eq('id', 1).single();

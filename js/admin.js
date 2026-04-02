@@ -50,6 +50,7 @@ let votes       = [];      // votes for current situation
 const jumpSelect       = document.getElementById('jump-select');
 const revealBtn        = document.getElementById('reveal-btn');
 const resetBtn         = document.getElementById('reset-btn');
+const backBtn          = document.getElementById('back-btn');
 const phaseIndicator   = document.getElementById('phase-indicator');
 const adminProgress    = document.getElementById('admin-progress');
 const sitSummaryBar    = document.getElementById('sit-summary-bar');
@@ -243,19 +244,31 @@ function buildGroupRow(gNum) {
     return `<td></td>`;
   }).join('');
 
-  // Company metric cells
-  const metricCells = [gs.cash_flow, gs.brand_trust, gs.employee_morale].map(val =>
-    `<td style="text-align:center; font-weight:700; color:${metricColor(val)};">${val}</td>`
-  ).join('');
+  // Company metric cells (editable)
+  const metricKeys = ['cash_flow', 'brand_trust', 'employee_morale'];
+  const metricCells = metricKeys.map(key => {
+    const val = gs[key];
+    return `<td style="text-align:center;">
+      <input type="number" class="edit-metric" data-group="${gNum}" data-key="${key}"
+        value="${val}" style="width:50px; text-align:center; font-weight:700; color:${metricColor(val)};
+        background:transparent; border:1px solid transparent; border-radius:4px; padding:2px;
+        font-size:13px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='transparent'" />
+    </td>`;
+  }).join('');
 
-  // Role KPI cells
+  // Role KPI cells (editable)
   const roleCells = ROLES.map(role => {
     const p = groupPlayers.find(pl => pl.role === role);
     if (!p) return `<td style="text-align:center; color:#444;">—</td>`;
     const fired = p.kpi_score <= FIRED_THRESHOLD;
     const voterMark = p.is_voter ? ' ★' : '';
     return `<td style="text-align:center;">
-      <span style="font-weight:700; color:${scoreColor(p.kpi_score)}; ${fired ? 'text-decoration:line-through;' : ''}" title="${p.name}${voterMark}">${p.kpi_score}</span>
+      <input type="number" class="edit-kpi" data-player-id="${p.id}" data-group="${gNum}"
+        value="${p.kpi_score}" title="${p.name}${voterMark}"
+        style="width:50px; text-align:center; font-weight:700; color:${scoreColor(p.kpi_score)};
+        ${fired ? 'text-decoration:line-through;' : ''}
+        background:transparent; border:1px solid transparent; border-radius:4px; padding:2px;
+        font-size:13px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='transparent'" />
       <button class="remove-player-btn" data-id="${p.id}" style="background:none;border:none;cursor:pointer;color:#f05252;font-size:10px;padding:0 0 0 2px;opacity:0.5;" title="นำ ${p.name} ออก">✕</button>
     </td>`;
   }).join('');
@@ -293,6 +306,12 @@ function updateButtons() {
   jumpSelect.disabled = phase === 'voting';
 
   revealBtn.disabled = phase !== 'voting' || sitIdx < 0;
+
+  // Back button: enabled when revealed, or when voting and not at first situation
+  backBtn.disabled = !(
+    (phase === 'revealed' && sitIdx >= 0) ||
+    (phase === 'voting' && sitIdx > 0)
+  );
 }
 
 // ── Jump to situation ─────────────────────────────────────────
@@ -472,6 +491,194 @@ async function removePlayer(playerId) {
   renderSituationBar();
   showToast('นำผู้เล่นออกเรียบร้อยแล้ว', 'success');
 }
+
+// ── Editable stats (delegated events) ─────────────────────────
+document.addEventListener('change', async (e) => {
+  // Company metric edit
+  if (e.target.classList.contains('edit-metric')) {
+    const gNum = parseInt(e.target.dataset.group);
+    const key  = e.target.dataset.key;
+    const val  = parseInt(e.target.value);
+    if (isNaN(val)) return;
+
+    const { error } = await supabase.from('group_scores')
+      .update({ [key]: val }).eq('group_number', gNum);
+    if (error) {
+      showToast('ไม่สามารถอัปเดตคะแนนได้', 'error');
+    } else {
+      if (groupScores[gNum]) groupScores[gNum][key] = val;
+      showToast(`กลุ่ม ${gNum}: อัปเดต ${key} = ${val}`, 'success');
+      renderGameOver();
+    }
+  }
+
+  // Player KPI edit
+  if (e.target.classList.contains('edit-kpi')) {
+    const playerId = e.target.dataset.playerId;
+    const val = parseInt(e.target.value);
+    if (isNaN(val)) return;
+
+    const { error } = await supabase.from('players')
+      .update({ kpi_score: val }).eq('id', playerId);
+    if (error) {
+      showToast('ไม่สามารถอัปเดต KPI ได้', 'error');
+    } else {
+      const p = players.find(pl => pl.id === playerId);
+      if (p) p.kpi_score = val;
+      showToast(`อัปเดต KPI: ${val}`, 'success');
+    }
+  }
+});
+
+// ── Back button ───────────────────────────────────────────────
+backBtn.addEventListener('click', async () => {
+  const sitIdx = gameState?.current_situation_index ?? -1;
+  const phase  = gameState?.phase ?? 'waiting';
+
+  // Can go back if: current index > 0 OR (index 0 and revealed)
+  // We go back to the previous situation in voting phase
+  let targetIdx;
+  if (phase === 'revealed') {
+    // Go back to same situation in voting phase — undo the reveal
+    targetIdx = sitIdx;
+  } else if (phase === 'voting' && sitIdx > 0) {
+    // Go back to previous situation
+    targetIdx = sitIdx - 1;
+  } else {
+    return;
+  }
+
+  if (!confirm(`ย้อนกลับ${phase === 'revealed' ? ' (ยกเลิกการเปิดผล)' : ''}?`)) return;
+  backBtn.disabled = true;
+
+  if (phase === 'revealed') {
+    // Undo reveal: revert scores for all groups for this situation
+    const groups = getGroups();
+    for (const gNum of groups) {
+      const result = groupResults[gNum]?.[sitIdx];
+      if (result === undefined) continue;
+
+      const groupPlayers = players.filter(p => p.group_number === gNum);
+      const sit = SITUATIONS[sitIdx];
+
+      if (result !== 'X') {
+        // Reverse the score changes
+        const opt = result === 'A' ? sit.optionA : sit.optionB;
+        const gs = groupScores[gNum];
+
+        // Reverse company scores
+        await supabase.from('group_scores').update({
+          cash_flow:       (gs.cash_flow ?? 50)       - (opt.company.cash_flow ?? 0),
+          brand_trust:     (gs.brand_trust ?? 50)     - (opt.company.brand_trust ?? 0),
+          employee_morale: (gs.employee_morale ?? 50) - (opt.company.employee_morale ?? 0),
+        }).eq('group_number', gNum);
+
+        // Reverse player KPIs
+        for (const p of groupPlayers) {
+          const delta = opt.kpi[p.role] ?? 0;
+          await supabase.from('players').update({ kpi_score: p.kpi_score - delta }).eq('id', p.id);
+          p.kpi_score -= delta;
+        }
+
+        // Update local state
+        gs.cash_flow       -= (opt.company.cash_flow ?? 0);
+        gs.brand_trust     -= (opt.company.brand_trust ?? 0);
+        gs.employee_morale -= (opt.company.employee_morale ?? 0);
+      } else {
+        // Reverse X penalty (+10 each)
+        const gs = groupScores[gNum];
+        await supabase.from('group_scores').update({
+          cash_flow:       gs.cash_flow + 10,
+          brand_trust:     gs.brand_trust + 10,
+          employee_morale: gs.employee_morale + 10,
+        }).eq('group_number', gNum);
+        gs.cash_flow += 10;
+        gs.brand_trust += 10;
+        gs.employee_morale += 10;
+      }
+
+      // Delete the group result
+      await supabase.from('group_results').delete()
+        .eq('group_number', gNum).eq('situation_index', sitIdx);
+      if (groupResults[gNum]) delete groupResults[gNum][sitIdx];
+    }
+
+    // Set phase back to voting
+    await supabase.from('game_state').update({
+      phase: 'voting',
+      updated_at: new Date().toISOString(),
+    }).eq('id', 1);
+
+    showToast('ยกเลิกการเปิดผลเรียบร้อย', 'success');
+  } else {
+    // Go back to previous situation — also need to undo that situation's results if revealed
+    // First check if the previous situation was revealed
+    const prevResult = Object.values(groupResults).some(gr => gr[targetIdx] !== undefined);
+
+    if (prevResult) {
+      // Undo the previous situation's reveal too
+      const groups = getGroups();
+      for (const gNum of groups) {
+        const result = groupResults[gNum]?.[targetIdx];
+        if (result === undefined) continue;
+
+        const groupPlayers = players.filter(p => p.group_number === gNum);
+        const sit = SITUATIONS[targetIdx];
+
+        if (result !== 'X') {
+          const opt = result === 'A' ? sit.optionA : sit.optionB;
+          const gs = groupScores[gNum];
+
+          await supabase.from('group_scores').update({
+            cash_flow:       (gs.cash_flow ?? 50)       - (opt.company.cash_flow ?? 0),
+            brand_trust:     (gs.brand_trust ?? 50)     - (opt.company.brand_trust ?? 0),
+            employee_morale: (gs.employee_morale ?? 50) - (opt.company.employee_morale ?? 0),
+          }).eq('group_number', gNum);
+
+          for (const p of groupPlayers) {
+            const delta = opt.kpi[p.role] ?? 0;
+            await supabase.from('players').update({ kpi_score: p.kpi_score - delta }).eq('id', p.id);
+            p.kpi_score -= delta;
+          }
+
+          gs.cash_flow       -= (opt.company.cash_flow ?? 0);
+          gs.brand_trust     -= (opt.company.brand_trust ?? 0);
+          gs.employee_morale -= (opt.company.employee_morale ?? 0);
+        } else {
+          const gs = groupScores[gNum];
+          await supabase.from('group_scores').update({
+            cash_flow:       gs.cash_flow + 10,
+            brand_trust:     gs.brand_trust + 10,
+            employee_morale: gs.employee_morale + 10,
+          }).eq('group_number', gNum);
+          gs.cash_flow += 10;
+          gs.brand_trust += 10;
+          gs.employee_morale += 10;
+        }
+
+        await supabase.from('group_results').delete()
+          .eq('group_number', gNum).eq('situation_index', targetIdx);
+        if (groupResults[gNum]) delete groupResults[gNum][targetIdx];
+      }
+    }
+
+    // Delete votes for current situation
+    await supabase.from('votes').delete().eq('situation_index', sitIdx);
+
+    // Move to previous situation in voting phase
+    await supabase.from('game_state').update({
+      current_situation_index: targetIdx,
+      phase: 'voting',
+      updated_at: new Date().toISOString(),
+    }).eq('id', 1);
+
+    votes = [];
+    showToast(`ย้อนกลับไป: ${SITUATIONS[targetIdx].title}`, 'success');
+  }
+
+  await loadAll();
+  renderAll();
+});
 
 // ── Subscriptions ─────────────────────────────────────────────
 function subscribeToChanges() {

@@ -9,22 +9,8 @@ const joinForm   = document.getElementById('join-form');
 const waitingDiv = document.getElementById('waiting-for-game');
 const joinedAsP  = document.getElementById('joined-as');
 
-// ── Determine voter vs viewer from URL param ──────────────────
-const isVoter = new URLSearchParams(window.location.search).get('voter') === '1';
-
-// Show access label
-const accessLabel = document.getElementById('access-label');
-if (isVoter) {
-  accessLabel.textContent = 'โหมดผู้โหวต — คุณสามารถโหวตเลือกทางออกให้กลุ่มได้';
-  accessLabel.style.background = '#1e3a5f';
-  accessLabel.style.color = '#4f8ef7';
-  accessLabel.style.display = 'block';
-} else {
-  accessLabel.textContent = 'โหมดผู้ชม — คุณสามารถดูสถานการณ์และคะแนนได้';
-  accessLabel.style.background = '#1e2d1e';
-  accessLabel.style.color = '#22c55e';
-  accessLabel.style.display = 'block';
-}
+// ── Voter/Viewer selection from form dropdown ───────────────────
+const accessSelect = document.getElementById('access-mode');
 
 // ── If already joined, redirect straight to player page ───────
 const existingId = localStorage.getItem('novatech_player_id');
@@ -34,9 +20,10 @@ if (existingId) {
 
 // ── Join button ───────────────────────────────────────────────
 joinBtn.addEventListener('click', async () => {
-  const name  = nameInput.value.trim();
-  const role  = roleSelect.value;
-  const group = parseInt(groupInput.value);
+  const name    = nameInput.value.trim();
+  const role    = roleSelect.value;
+  const group   = parseInt(groupInput.value);
+  const isVoter = accessSelect.value === 'voter';
 
   hideError();
 

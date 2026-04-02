@@ -6,7 +6,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SUPABASE_URL = 'https://bhvkoqbiuwgcsuutnbfv.supabase.co';       // e.g. https://xxxx.supabase.co
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJodmtvcWJpdXdnY3N1dXRuYmZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3OTUzNzEsImV4cCI6MjA4ODM3MTM3MX0.pN-Tcur55neIa0b9GYw8qdwIImbf5frhHh90WLJ8Uc0'; // public anon key
+const SUPABASE_URL = 'https://gvhrgefcjevnempnseqo.supabase.co';       // e.g. https://xxxx.supabase.co
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2aHJnZWZjamV2bmVtcG5zZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNjY2NDMsImV4cCI6MjA4OTc0MjY0M30.49NQLfRa0CHetctxD5URwvPZrPeO7IyY8K2qKkg8C_A'; // public anon key
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

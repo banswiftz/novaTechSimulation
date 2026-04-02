@@ -432,8 +432,9 @@ revealBtn.addEventListener('click', async () => {
         .select('*').eq('group_number', gNum).eq('is_used', true);
 
       // Shadow Capital: clamp company KPIs to >= 0
+      // Check used_at_situation (set by markCardUsed) matches current situation
       const shadowCard = (cards || []).find(c =>
-        c.card_type === 'shadow_capital' && c.card_metadata?.applied_at_situation === sitIdx
+        c.card_type === 'shadow_capital' && c.used_at_situation === sitIdx
       );
       if (shadowCard) {
         newCompany.cash_flow       = Math.max(0, newCompany.cash_flow);

@@ -416,11 +416,12 @@ revealBtn.addEventListener('click', async () => {
     }
 
     const [companyRes, resultRes, ...playerResults] = await Promise.all([
-      supabase.from('group_scores').update({
+      supabase.from('group_scores').upsert({
+        group_number:    gNum,
         cash_flow:       newCompany.cash_flow,
         brand_trust:     newCompany.brand_trust,
         employee_morale: newCompany.employee_morale,
-      }).eq('group_number', gNum),
+      }, { onConflict: 'group_number' }),
       supabase.from('group_results').upsert({
         group_number:    gNum,
         situation_index: sitIdx,
@@ -568,11 +569,12 @@ backBtn.addEventListener('click', async () => {
         const gs = groupScores[gNum];
 
         // Reverse company scores
-        await supabase.from('group_scores').update({
+        await supabase.from('group_scores').upsert({
+          group_number:    gNum,
           cash_flow:       (gs.cash_flow ?? 50)       - (opt.company.cash_flow ?? 0),
           brand_trust:     (gs.brand_trust ?? 50)     - (opt.company.brand_trust ?? 0),
           employee_morale: (gs.employee_morale ?? 50) - (opt.company.employee_morale ?? 0),
-        }).eq('group_number', gNum);
+        }, { onConflict: 'group_number' });
 
         // Reverse player KPIs
         for (const p of groupPlayers) {
@@ -588,11 +590,12 @@ backBtn.addEventListener('click', async () => {
       } else {
         // Reverse X penalty (+10 each)
         const gs = groupScores[gNum];
-        await supabase.from('group_scores').update({
+        await supabase.from('group_scores').upsert({
+          group_number:    gNum,
           cash_flow:       gs.cash_flow + 10,
           brand_trust:     gs.brand_trust + 10,
           employee_morale: gs.employee_morale + 10,
-        }).eq('group_number', gNum);
+        }, { onConflict: 'group_number' });
         gs.cash_flow += 10;
         gs.brand_trust += 10;
         gs.employee_morale += 10;
@@ -630,11 +633,12 @@ backBtn.addEventListener('click', async () => {
           const opt = result === 'A' ? sit.optionA : sit.optionB;
           const gs = groupScores[gNum];
 
-          await supabase.from('group_scores').update({
+          await supabase.from('group_scores').upsert({
+            group_number:    gNum,
             cash_flow:       (gs.cash_flow ?? 50)       - (opt.company.cash_flow ?? 0),
             brand_trust:     (gs.brand_trust ?? 50)     - (opt.company.brand_trust ?? 0),
             employee_morale: (gs.employee_morale ?? 50) - (opt.company.employee_morale ?? 0),
-          }).eq('group_number', gNum);
+          }, { onConflict: 'group_number' });
 
           for (const p of groupPlayers) {
             const delta = opt.kpi[p.role] ?? 0;
@@ -647,11 +651,12 @@ backBtn.addEventListener('click', async () => {
           gs.employee_morale -= (opt.company.employee_morale ?? 0);
         } else {
           const gs = groupScores[gNum];
-          await supabase.from('group_scores').update({
+          await supabase.from('group_scores').upsert({
+            group_number:    gNum,
             cash_flow:       gs.cash_flow + 10,
             brand_trust:     gs.brand_trust + 10,
             employee_morale: gs.employee_morale + 10,
-          }).eq('group_number', gNum);
+          }, { onConflict: 'group_number' });
           gs.cash_flow += 10;
           gs.brand_trust += 10;
           gs.employee_morale += 10;

@@ -37,8 +37,6 @@ authBtn.addEventListener('click', () => {
 });
 passInput.addEventListener('keydown', e => { if (e.key === 'Enter') authBtn.click(); });
 
-if (checkAuth()) initAdmin();
-
 // ── State ────────────────────────────────────────────────────
 let gameState   = null;
 let players     = [];      // all players across all groups
@@ -78,6 +76,9 @@ sitToggleBtn.addEventListener('click', () => {
   sitDetailPanel.style.display = open ? 'none' : 'block';
   sitToggleBtn.textContent = open ? '▼ รายละเอียด' : '▲ ซ่อน';
 });
+
+// Check auth automatically if returning to page
+if (checkAuth()) initAdmin();
 
 // ── Init ─────────────────────────────────────────────────────
 async function initAdmin() {

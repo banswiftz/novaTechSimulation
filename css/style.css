@@ -324,3 +324,65 @@ body {
 .group-card { transition: border-color .2s; }
 .group-card-danger { border-color: var(--danger) !important; }
 
+/* ---- Special Cards: Selection Grid (join page) ---- */
+.card-selection-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 480px) { .card-selection-grid { grid-template-columns: 1fr; } }
+
+.special-card {
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s, transform .1s;
+  text-align: center;
+}
+.special-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+.special-card.selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface2));
+}
+.special-card-icon { font-size: 28px; margin-bottom: 8px; }
+.special-card-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.special-card-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+/* ---- Special Cards: Player Slots ---- */
+.special-card-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  flex: 1;
+  min-width: 200px;
+}
+.special-card-slot.available { border-color: color-mix(in srgb, var(--primary) 50%, var(--border)); }
+.special-card-slot.used { opacity: 0.5; }
+.special-card-slot-icon { font-size: 24px; flex-shrink: 0; }
+.special-card-slot-info { flex: 1; }
+.special-card-slot-name { font-size: 13px; font-weight: 700; }
+.special-card-slot-status { font-size: 11px; color: var(--text-muted); }
+.special-card-slot.used .special-card-slot-name { text-decoration: line-through; }
+
+/* ---- Card badge (waiting screen) ---- */
+.card-badge {
+  display: inline-block;
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 2px;
+}
+

@@ -73,6 +73,25 @@
       <p id="game-over-reason">ดัชนีชี้วัดของบริษัทตกต่ำกว่าเส้นตาย</p>
     </div>
 
+    <!-- Special Cards Panel -->
+    <div class="card" id="cards-panel" style="display:none; margin-bottom:20px;">
+      <div class="card-title">การ์ดพิเศษของกลุ่ม</div>
+      <div id="cards-slots" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- Card activation modal -->
+    <div id="card-modal" style="display:none; position:fixed; inset:0; background:rgba(15,17,23,.9); z-index:9998; align-items:center; justify-content:center; padding:24px;">
+      <div class="card" style="max-width:400px; width:100%;">
+        <div id="card-modal-title" style="font-size:16px; font-weight:700; margin-bottom:8px;"></div>
+        <div id="card-modal-desc" style="font-size:13px; color:#8892a4; margin-bottom:16px;"></div>
+        <div id="card-modal-body"></div>
+        <div style="display:flex; gap:8px; margin-top:16px;">
+          <button class="btn btn-primary" id="card-modal-confirm" style="flex:1;">ยืนยัน</button>
+          <button class="btn btn-ghost" id="card-modal-cancel" style="flex:1;">ยกเลิก</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Main area -->
     <div class="card" id="main-area">
 

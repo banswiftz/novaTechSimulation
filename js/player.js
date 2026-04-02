@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import {
-  SITUATIONS, ROLE_KPI_NAMES,
+  SITUATIONS, ROLE_KPI_NAMES, SPECIAL_CARDS,
   GAME_OVER_THRESHOLD, FIRED_THRESHOLD, fmtDelta
 } from './game-data.js';
 
@@ -36,6 +36,16 @@ const stateRevealed = document.getElementById('state-revealed');
 const stateEnd      = document.getElementById('state-end');
 
 const progressSteps = document.querySelectorAll('.progress-step');
+
+// Cards DOM
+const cardsPanel   = document.getElementById('cards-panel');
+const cardsSlots   = document.getElementById('cards-slots');
+const cardModal    = document.getElementById('card-modal');
+const cardModalTitle   = document.getElementById('card-modal-title');
+const cardModalDesc    = document.getElementById('card-modal-desc');
+const cardModalBody    = document.getElementById('card-modal-body');
+const cardModalConfirm = document.getElementById('card-modal-confirm');
+const cardModalCancel  = document.getElementById('card-modal-cancel');
 
 // ── Init header ───────────────────────────────────────────────
 nameDisplay.textContent = `${playerName} · กลุ่ม ${groupNumber}`;
@@ -73,17 +83,21 @@ let currentSitIdx   = -1;
 let myVote          = null;
 let lastRevealedIdx = -1;
 let myKpiScore      = 50;
+let groupCards      = [];  // [{card_type, is_used, used_at_situation, card_metadata}]
 
 // ── Init ─────────────────────────────────────────────────────
 async function init() {
-  const [{ data: player }, { data: company }, { data: gameState }] = await Promise.all([
+  const [{ data: player }, { data: company }, { data: gameState }, { data: cards }] = await Promise.all([
     supabase.from('players').select('*').eq('id', playerId).single(),
     supabase.from('group_scores').select('*').eq('group_number', groupNumber).single(),
     supabase.from('game_state').select('*').eq('id', 1).single(),
+    supabase.from('group_cards').select('*').eq('group_number', groupNumber),
   ]);
 
+  groupCards = cards || [];
   if (player)    updateKpi(player.kpi_score);
   if (company)   updateCompany(company);
+  renderCardsPanel();
   if (gameState) await applyGameState(gameState, company, player);
 
   subscribeToChanges();
@@ -94,7 +108,6 @@ function subscribeToChanges() {
   supabase.channel('player-watch')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, async payload => {
       const gs = payload.new;
-      // On game reset, check if we still exist
       if (gs.current_situation_index === -1) {
         const { data: stillExists } = await supabase.from('players').select('id').eq('id', playerId).maybeSingle();
         if (!stillExists) {
@@ -108,7 +121,6 @@ function subscribeToChanges() {
       ]);
       await applyGameState(gs, company, player);
     })
-    // Detect when this player is removed by admin
     .on('postgres_changes', {
       event: 'DELETE', schema: 'public', table: 'players',
       filter: `id=eq.${playerId}`
@@ -127,7 +139,6 @@ function subscribeToChanges() {
     }, payload => {
       updateKpi(payload.new.kpi_score);
     })
-    // Watch group_results for our group — triggers revealed screen
     .on('postgres_changes', {
       event: 'INSERT', schema: 'public', table: 'group_results',
       filter: `group_number=eq.${groupNumber}`
@@ -140,21 +151,228 @@ function subscribeToChanges() {
         showRevealed(SITUATIONS[currentSitIdx], result.winning_option, company, player);
       }
     })
+    // Watch card changes
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'group_cards',
+      filter: `group_number=eq.${groupNumber}`
+    }, async () => {
+      const { data } = await supabase.from('group_cards').select('*').eq('group_number', groupNumber);
+      groupCards = data || [];
+      renderCardsPanel();
+    })
     .subscribe((status, err) => {
       console.log('[Player Realtime]', status, err || '');
       if (status === 'SUBSCRIBED') {
-        console.log('[Player Realtime] ✅ Connected — realtime is working');
+        console.log('[Player Realtime] Connected');
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        console.error('[Player Realtime] ❌ Connection failed:', status, err);
+        console.error('[Player Realtime] Connection failed:', status, err);
         showToast('Realtime ไม่สามารถเชื่อมต่อได้ — กรุณารีเฟรช', 'error');
       }
     });
+}
+
+// ── Cards Panel ──────────────────────────────────────────────
+function renderCardsPanel() {
+  if (groupCards.length === 0) {
+    cardsPanel.style.display = 'none';
+    return;
+  }
+  cardsPanel.style.display = 'block';
+  cardsSlots.innerHTML = '';
+
+  for (const gc of groupCards) {
+    const card = SPECIAL_CARDS[gc.card_type];
+    if (!card) continue;
+
+    const el = document.createElement('div');
+    el.className = `special-card-slot ${gc.is_used ? 'used' : 'available'}`;
+
+    const canActivate = isVoter && !gc.is_used && currentSitIdx >= 0 && currentSitIdx < SITUATIONS.length;
+
+    el.innerHTML = `
+      <div class="special-card-slot-icon">${card.icon}</div>
+      <div class="special-card-slot-info">
+        <div class="special-card-slot-name">${card.nameTh}</div>
+        <div class="special-card-slot-status">${gc.is_used ? 'ใช้แล้ว' : 'พร้อมใช้งาน'}</div>
+      </div>
+      ${canActivate ? `<button class="btn btn-sm btn-primary activate-card-btn" data-card-type="${gc.card_type}">ใช้งาน</button>` : ''}
+    `;
+
+    const btn = el.querySelector('.activate-card-btn');
+    if (btn) {
+      btn.addEventListener('click', () => activateCard(gc.card_type));
+    }
+
+    cardsSlots.appendChild(el);
+  }
+}
+
+// ── Card Activation ──────────────────────────────────────────
+async function activateCard(cardType) {
+  const card = SPECIAL_CARDS[cardType];
+  if (!card) return;
+
+  if (cardType === 'consulting_report') {
+    activateConsultingReport();
+  } else if (cardType === 'shadow_capital') {
+    activateShadowCapital();
+  } else if (cardType === 'global_pr') {
+    activateGlobalPR();
+  } else if (cardType === 'employee_shield') {
+    activateEmployeeShield();
+  }
+}
+
+// -- Consulting Firm Report --
+function activateConsultingReport() {
+  const sit = SITUATIONS[currentSitIdx];
+  if (!sit) return;
+
+  cardModalTitle.textContent = '📊 รายงานบริษัทที่ปรึกษา';
+  cardModalDesc.textContent = 'ผลกระทบต่อ KPI บริษัทของแต่ละตัวเลือก:';
+
+  const labels = { cash_flow: 'เงินสด', brand_trust: 'แบรนด์', employee_morale: 'ขวัญกำลังใจ' };
+  let html = '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">';
+
+  for (const [label, opt] of [['ตัวเลือก A', sit.optionA], ['ตัวเลือก B', sit.optionB]]) {
+    html += `<div style="background:var(--surface2); border-radius:8px; padding:12px;">
+      <div style="font-weight:700; margin-bottom:8px; font-size:13px;">${label}: ${opt.label}</div>`;
+    for (const [name, key] of Object.entries(labels)) {
+      const val = opt.company[key] ?? 0;
+      const cls = val > 0 ? 'pos' : val < 0 ? 'neg' : 'neu';
+      html += `<span class="delta-chip ${cls}" style="margin:2px; font-size:11px;">${name}: ${fmtDelta(val)}</span>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  cardModalBody.innerHTML = html;
+
+  showCardModal(async () => {
+    await markCardUsed('consulting_report');
+    showToast('📊 เปิดเผยข้อมูลจากที่ปรึกษาแล้ว', 'success');
+  });
+}
+
+// -- Shadow Capital Injection --
+function activateShadowCapital() {
+  cardModalTitle.textContent = '💰 ฉีดทุนลับ';
+  cardModalDesc.textContent = 'ป้องกันไม่ให้ KPI บริษัททุกตัวต่ำกว่า 0 ในรอบนี้';
+  cardModalBody.innerHTML = '<p style="color:#f59e0b; font-size:13px;">เมื่อเปิดผลรอบนี้ ถ้า KPI บริษัทจะติดลบ จะถูกหยุดไว้ที่ 0</p>';
+
+  showCardModal(async () => {
+    await markCardUsed('shadow_capital', { applied_at_situation: currentSitIdx });
+    showToast('💰 ฉีดทุนลับเรียบร้อย — จะป้องกันตอนเปิดผลรอบนี้', 'success');
+  });
+}
+
+// -- Global PR Blitz --
+function activateGlobalPR() {
+  cardModalTitle.textContent = '📢 แคมเปญ PR ระดับโลก';
+  cardModalDesc.textContent = 'เลือก KPI บริษัท 1 ตัวเพื่อเพิ่ม +20 ทันที:';
+
+  const options = [
+    { key: 'cash_flow', label: 'กระแสเงินสด' },
+    { key: 'brand_trust', label: 'ความเชื่อมั่นแบรนด์' },
+    { key: 'employee_morale', label: 'ขวัญกำลังใจ' },
+  ];
+
+  cardModalBody.innerHTML = options.map(o =>
+    `<label style="display:flex; align-items:center; gap:8px; padding:8px; cursor:pointer; border-radius:6px; margin-bottom:4px; background:var(--surface2);">
+      <input type="radio" name="pr-target" value="${o.key}" style="accent-color:var(--primary);" />
+      <span style="font-size:14px;">${o.label} +20</span>
+    </label>`
+  ).join('');
+
+  showCardModal(async () => {
+    const selected = cardModalBody.querySelector('input[name="pr-target"]:checked');
+    if (!selected) { showToast('กรุณาเลือก KPI ที่ต้องการเพิ่ม', 'error'); return; }
+    const targetKpi = selected.value;
+
+    // Get current score and add +20
+    const { data: gs } = await supabase.from('group_scores').select('*').eq('group_number', groupNumber).single();
+    if (!gs) return;
+
+    const newVal = (gs[targetKpi] ?? 50) + 20;
+    await supabase.from('group_scores').update({ [targetKpi]: newVal }).eq('group_number', groupNumber);
+    await markCardUsed('global_pr', { target_kpi: targetKpi });
+
+    const label = options.find(o => o.key === targetKpi)?.label || targetKpi;
+    showToast(`📢 ${label} +20 เรียบร้อย!`, 'success');
+  });
+}
+
+// -- Employee Shield Policy --
+async function activateEmployeeShield() {
+  cardModalTitle.textContent = '🛡️ นโยบายคุ้มครองพนักงาน';
+  cardModalDesc.textContent = 'เลือกผู้เล่น 1 คนที่ต้องการคุ้มครอง (KPI จะไม่ต่ำกว่า 0):';
+
+  const { data: groupPlayers } = await supabase
+    .from('players').select('*')
+    .eq('group_number', groupNumber)
+    .order('created_at');
+
+  if (!groupPlayers || groupPlayers.length === 0) return;
+
+  cardModalBody.innerHTML = groupPlayers.map(p =>
+    `<label style="display:flex; align-items:center; gap:8px; padding:8px; cursor:pointer; border-radius:6px; margin-bottom:4px; background:var(--surface2);">
+      <input type="radio" name="shield-target" value="${p.id}" style="accent-color:var(--primary);" />
+      <span style="font-size:14px;">${p.name} (${p.role}) — KPI: ${p.kpi_score}</span>
+    </label>`
+  ).join('');
+
+  showCardModal(async () => {
+    const selected = cardModalBody.querySelector('input[name="shield-target"]:checked');
+    if (!selected) { showToast('กรุณาเลือกผู้เล่นที่ต้องการคุ้มครอง', 'error'); return; }
+
+    const targetId = selected.value;
+    const targetPlayer = groupPlayers.find(p => p.id === targetId);
+    await markCardUsed('employee_shield', { target_player_id: targetId });
+
+    showToast(`🛡️ คุ้มครอง ${targetPlayer?.name || 'ผู้เล่น'} เรียบร้อย`, 'success');
+  });
+}
+
+// -- Card modal helpers --
+function showCardModal(onConfirm) {
+  cardModal.style.display = 'flex';
+  cardModalConfirm.onclick = async () => {
+    cardModalConfirm.disabled = true;
+    await onConfirm();
+    cardModal.style.display = 'none';
+    cardModalConfirm.disabled = false;
+  };
+  cardModalCancel.onclick = () => {
+    cardModal.style.display = 'none';
+  };
+}
+
+async function markCardUsed(cardType, metadata = null) {
+  const update = {
+    is_used: true,
+    used_at_situation: currentSitIdx,
+  };
+  if (metadata) update.card_metadata = metadata;
+
+  await supabase.from('group_cards')
+    .update(update)
+    .eq('group_number', groupNumber)
+    .eq('card_type', cardType);
+
+  // Update local state
+  const gc = groupCards.find(c => c.card_type === cardType);
+  if (gc) {
+    gc.is_used = true;
+    gc.used_at_situation = currentSitIdx;
+    if (metadata) gc.card_metadata = metadata;
+  }
+  renderCardsPanel();
 }
 
 // ── Apply game state ──────────────────────────────────────────
 async function applyGameState(gs, company, player) {
   currentSitIdx = gs.current_situation_index;
   updateProgress(currentSitIdx);
+  renderCardsPanel(); // re-render cards with current situation context
 
   if (currentSitIdx === -1) { showState('lobby'); return; }
   if (currentSitIdx >= SITUATIONS.length) { showEndScreen(player, company); return; }
@@ -175,7 +393,6 @@ async function applyGameState(gs, company, player) {
 
   } else if (gs.phase === 'revealed') {
     if (lastRevealedIdx !== currentSitIdx) {
-      // Look up this group's result
       const { data: result } = await supabase
         .from('group_results')
         .select('winning_option')
@@ -222,7 +439,6 @@ function showVoting(sit, alreadyVoted) {
   btnA.className = 'option-btn';
   btnB.className = 'option-btn';
 
-  // Viewers cannot vote — show situation info only
   if (!isVoter) {
     optionsGrid.style.display = 'none';
     votedNotice.style.display = 'block';
@@ -232,7 +448,6 @@ function showVoting(sit, alreadyVoted) {
 
   optionsGrid.style.display = '';
 
-  // Fired players cannot vote
   if (myKpiScore <= FIRED_THRESHOLD) {
     btnA.disabled = true; btnB.disabled = true;
     votedNotice.style.display = 'block';
@@ -276,7 +491,7 @@ async function submitVote(choice) {
   (choice === 'A' ? btnA : btnB).classList.add('selected');
   showToast('ส่งโหวตเรียบร้อยแล้ว!', 'success');
 
-  // ── Backup: send vote to Google Form ─────────────────────────
+  // Backup: send vote to Google Form
   const sit = SITUATIONS[currentSitIdx];
   const scenLabel = sit.type === 'popup' ? `P${sit.number}` : `S${sit.number}`;
   const formBody = new URLSearchParams();
@@ -300,7 +515,6 @@ function showRevealed(sit, winningOption, company, player) {
   const rBtnA = document.getElementById('result-btn-a');
   const rBtnB = document.getElementById('result-btn-b');
 
-  // No-vote penalty (X): company -10 each, KPI unchanged
   if (winningOption === 'X') {
     rBtnA.className = 'option-btn loser';
     rBtnB.className = 'option-btn loser';
@@ -330,7 +544,6 @@ function showRevealed(sit, winningOption, company, player) {
   const chosenBtn = winningOption === 'A' ? rBtnA : rBtnB;
   chosenBtn.querySelector('.opt-label').textContent = `ตัวเลือก ${winningOption} — กลุ่มของคุณเลือก`;
 
-  // My KPI delta
   const opt = winningOption === 'A' ? sit.optionA : sit.optionB;
   const myDelta = opt.kpi[playerRole] ?? 0;
   const myDeltaEl = document.getElementById('my-delta');
@@ -340,7 +553,6 @@ function showRevealed(sit, winningOption, company, player) {
   chip.textContent = `${playerRole}: ${fmtDelta(myDelta)}`;
   myDeltaEl.appendChild(chip);
 
-  // Company deltas
   const companyDeltasEl = document.getElementById('company-deltas');
   companyDeltasEl.innerHTML = '';
   for (const [label, key] of [['กระแสเงินสด', 'cash_flow'], ['ความเชื่อมั่นแบรนด์', 'brand_trust'], ['ขวัญกำลังใจ', 'employee_morale']]) {
@@ -356,7 +568,6 @@ function showRevealed(sit, winningOption, company, player) {
 async function showEndScreen(player, company) {
   showState('end');
 
-  // Show only this group's players
   const { data: groupPlayers } = await supabase
     .from('players').select('*')
     .eq('group_number', groupNumber)
@@ -438,6 +649,8 @@ function updateCompany(company) {
     if (company.brand_trust <= GAME_OVER_THRESHOLD)     reasons.push('ความเชื่อมั่นแบรนด์');
     if (company.employee_morale <= GAME_OVER_THRESHOLD) reasons.push('ขวัญกำลังใจ');
     gameOverReason.textContent = `ดัชนีชี้วัดวิกฤตต่ำกว่า ${GAME_OVER_THRESHOLD}: ${reasons.join(', ')}`;
+  } else {
+    gameOverBanner.classList.remove('show');
   }
 }
 

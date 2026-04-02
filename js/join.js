@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { SPECIAL_CARDS, ALL_CARD_IDS, MAX_CARDS_PER_GROUP } from './game-data.js';
 
 const nameInput  = document.getElementById('player-name');
 const roleSelect = document.getElementById('role-select');
@@ -9,14 +10,22 @@ const joinForm   = document.getElementById('join-form');
 const waitingDiv = document.getElementById('waiting-for-game');
 const joinedAsP  = document.getElementById('joined-as');
 
-// ── Voter/Viewer selection from form dropdown ───────────────────
-const accessSelect = document.getElementById('access-mode');
+const accessSelect    = document.getElementById('access-mode');
+const cardSelection   = document.getElementById('card-selection');
+const cardGrid        = document.getElementById('card-grid');
+const confirmCardsBtn = document.getElementById('confirm-cards-btn');
+const cardError       = document.getElementById('card-error');
+const selectedCardsDisplay = document.getElementById('selected-cards-display');
 
 // ── If already joined, redirect straight to player page ───────
 const existingId = localStorage.getItem('novatech_player_id');
 if (existingId) {
   window.location.href = 'player.html';
 }
+
+// ── Card selection state ──────────────────────────────────────
+let selectedCards = new Set();
+let joinedGroup  = null;
 
 // ── Join button ───────────────────────────────────────────────
 joinBtn.addEventListener('click', async () => {
@@ -67,7 +76,7 @@ joinBtn.addEventListener('click', async () => {
     }
   }
 
-  // Insert player (unique constraint on group_number+role handles race condition)
+  // Insert player
   const { data: player, error: insertErr } = await supabase
     .from('players')
     .insert({ name, role, group_number: group, kpi_score: 50, is_voter: isVoter })
@@ -83,7 +92,7 @@ joinBtn.addEventListener('click', async () => {
     reset(); return;
   }
 
-  // Ensure group_scores row exists for this group
+  // Ensure group_scores row exists
   await supabase.from('group_scores').upsert(
     { group_number: group, cash_flow: 50, brand_trust: 50, employee_morale: 50 },
     { onConflict: 'group_number', ignoreDuplicates: true }
@@ -96,11 +105,129 @@ joinBtn.addEventListener('click', async () => {
   localStorage.setItem('novatech_group_number', String(group));
   localStorage.setItem('novatech_is_voter',     String(isVoter));
 
-  // Show waiting state
-  joinForm.style.display   = 'none';
-  waitingDiv.style.display = 'block';
+  joinedGroup = group;
+
+  if (isVoter) {
+    // Check if cards already selected for this group (e.g. page refresh)
+    const { data: existingCards } = await supabase
+      .from('group_cards')
+      .select('card_type')
+      .eq('group_number', group);
+
+    if (existingCards && existingCards.length >= MAX_CARDS_PER_GROUP) {
+      // Cards already selected — skip to waiting
+      showWaitingScreen(player, group, isVoter, existingCards.map(c => c.card_type));
+    } else {
+      // Show card selection
+      joinForm.style.display = 'none';
+      cardSelection.style.display = 'block';
+      renderCardGrid();
+    }
+  } else {
+    // Viewer — go straight to waiting, show cards if already selected
+    const { data: existingCards } = await supabase
+      .from('group_cards')
+      .select('card_type')
+      .eq('group_number', group);
+
+    showWaitingScreen(player, group, isVoter, existingCards?.map(c => c.card_type) || []);
+  }
+});
+
+// ── Card Selection Grid ──────────────────────────────────────
+function renderCardGrid() {
+  cardGrid.innerHTML = '';
+  for (const cardId of ALL_CARD_IDS) {
+    const card = SPECIAL_CARDS[cardId];
+    const el = document.createElement('div');
+    el.className = 'special-card';
+    el.dataset.cardId = cardId;
+    el.innerHTML = `
+      <div class="special-card-icon">${card.icon}</div>
+      <div class="special-card-name">${card.nameTh}</div>
+      <div class="special-card-desc">${card.description}</div>
+    `;
+    el.addEventListener('click', () => toggleCard(cardId, el));
+    cardGrid.appendChild(el);
+  }
+}
+
+function toggleCard(cardId, el) {
+  if (selectedCards.has(cardId)) {
+    selectedCards.delete(cardId);
+    el.classList.remove('selected');
+  } else {
+    if (selectedCards.size >= MAX_CARDS_PER_GROUP) return; // max 2
+    selectedCards.add(cardId);
+    el.classList.add('selected');
+  }
+  confirmCardsBtn.disabled = selectedCards.size !== MAX_CARDS_PER_GROUP;
+  confirmCardsBtn.textContent = `ยืนยันการ์ด (${selectedCards.size}/${MAX_CARDS_PER_GROUP})`;
+}
+
+// ── Confirm Cards ─────────────────────────────────────────────
+confirmCardsBtn.addEventListener('click', async () => {
+  if (selectedCards.size !== MAX_CARDS_PER_GROUP) return;
+  confirmCardsBtn.disabled = true;
+  confirmCardsBtn.textContent = 'กำลังบันทึก...';
+
+  const group = joinedGroup;
+  const inserts = [...selectedCards].map(cardType => ({
+    group_number: group,
+    card_type: cardType,
+    is_used: false,
+  }));
+
+  const { error } = await supabase.from('group_cards').upsert(inserts, {
+    onConflict: 'group_number,card_type',
+  });
+
+  if (error) {
+    cardError.textContent = 'ไม่สามารถบันทึกการ์ดได้ กรุณาลองใหม่';
+    cardError.style.display = 'block';
+    confirmCardsBtn.disabled = false;
+    confirmCardsBtn.textContent = `ยืนยันการ์ด (${selectedCards.size}/${MAX_CARDS_PER_GROUP})`;
+    return;
+  }
+
+  const playerId   = localStorage.getItem('novatech_player_id');
+  const playerName = localStorage.getItem('novatech_player_name');
+  const playerRole = localStorage.getItem('novatech_player_role');
+  const isVoter    = localStorage.getItem('novatech_is_voter') === 'true';
+
+  cardSelection.style.display = 'none';
+  showWaitingScreen(
+    { id: playerId, name: playerName, role: playerRole },
+    group,
+    isVoter,
+    [...selectedCards]
+  );
+});
+
+// ── Waiting Screen ────────────────────────────────────────────
+function showWaitingScreen(player, group, isVoter, cardTypes) {
+  joinForm.style.display      = 'none';
+  cardSelection.style.display = 'none';
+  waitingDiv.style.display    = 'block';
+
   const accessTag = isVoter ? '(ผู้โหวต)' : '(ผู้ชม)';
   joinedAsP.textContent = `กลุ่มที่ ${group} — ${player.name} (${player.role}) ${accessTag}`;
+
+  // Show selected cards
+  renderSelectedCards(cardTypes);
+
+  // For viewers — subscribe to card updates
+  if (!isVoter) {
+    supabase.channel('join-cards-watch')
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'group_cards',
+        filter: `group_number=eq.${group}`
+      }, async () => {
+        const { data } = await supabase.from('group_cards').select('card_type').eq('group_number', group);
+        renderSelectedCards(data?.map(c => c.card_type) || []);
+      })
+      .subscribe();
+  }
 
   // Subscribe to game_state — redirect when game starts
   const channel = supabase
@@ -115,17 +242,31 @@ joinBtn.addEventListener('click', async () => {
     .subscribe((status, err) => {
       console.log('[Join Realtime]', status, err || '');
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        console.error('[Join Realtime] ❌ Connection failed:', status, err);
+        console.error('[Join Realtime] Connection failed:', status, err);
       }
     });
 
   // Also check if game already started
-  const { data: gs } = await supabase.from('game_state').select('*').eq('id', 1).single();
-  if (gs && gs.current_situation_index >= 0) {
-    window.location.href = 'player.html';
-  }
-});
+  supabase.from('game_state').select('*').eq('id', 1).single().then(({ data: gs }) => {
+    if (gs && gs.current_situation_index >= 0) {
+      window.location.href = 'player.html';
+    }
+  });
+}
 
+function renderSelectedCards(cardTypes) {
+  if (!cardTypes || cardTypes.length === 0) {
+    selectedCardsDisplay.innerHTML = '<p style="font-size:12px; color:#8892a4;">ยังไม่ได้เลือกการ์ดพิเศษ</p>';
+    return;
+  }
+  selectedCardsDisplay.innerHTML = '<p style="font-size:12px; color:#8892a4; margin-bottom:8px;">การ์ดพิเศษของกลุ่ม:</p>' +
+    cardTypes.map(ct => {
+      const card = SPECIAL_CARDS[ct];
+      return card ? `<span class="card-badge">${card.icon} ${card.nameTh}</span>` : '';
+    }).join(' ');
+}
+
+// ── Helpers ───────────────────────────────────────────────────
 function showError(msg) {
   joinError.textContent = msg;
   joinError.style.display = 'block';

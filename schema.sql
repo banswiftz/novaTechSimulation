@@ -67,6 +67,17 @@ CREATE TABLE public.votes (
   CONSTRAINT votes_player_id_situation_index_key UNIQUE (player_id, situation_index)
 );
 
+CREATE TABLE public.group_cards (
+  id serial PRIMARY KEY,
+  group_number integer NOT NULL,
+  card_type text NOT NULL,
+  is_used boolean DEFAULT false,
+  used_at_situation integer,
+  card_metadata jsonb,
+  created_at timestamptz DEFAULT now(),
+  CONSTRAINT group_cards_unique UNIQUE (group_number, card_type)
+);
+
 -- Insert default rows
 INSERT INTO public.game_state (id) VALUES (1);
 INSERT INTO public.company_scores (id) VALUES (1);
@@ -110,4 +121,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.players;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.votes;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.company_scores;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.group_scores;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.group_results;
+
+-- group_cards RLS + realtime
+ALTER TABLE public.group_cards ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_read_group_cards" ON public.group_cards FOR SELECT USING (true);
+CREATE POLICY "public_insert_group_cards" ON public.group_cards FOR INSERT WITH CHECK (true);
+CREATE POLICY "public_update_group_cards" ON public.group_cards FOR UPDATE USING (true);
+CREATE POLICY "public_delete_group_cards" ON public.group_cards FOR DELETE USING (true);
+ALTER PUBLICATION supabase_realtime ADD TABLE public.group_cards;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.group_results;

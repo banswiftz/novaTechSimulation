@@ -13,10 +13,20 @@
       <p class="join-sub">Boardroom Crisis Simulation</p>
 
       <div class="card">
+        <!-- Card selection (voter only, shown after join) -->
+        <div id="card-selection" style="display:none;">
+          <p style="font-size:16px; font-weight:700; margin-bottom:4px;">เลือกการ์ดพิเศษ</p>
+          <p style="font-size:13px; color:#8892a4; margin-bottom:16px;">เลือก 2 ใบจาก 4 ใบ เพื่อใช้ในระหว่างเกม</p>
+          <div id="card-grid" class="card-selection-grid"></div>
+          <button class="btn btn-primary btn-full mt-16" id="confirm-cards-btn" disabled>ยืนยันการ์ด (0/2)</button>
+          <p id="card-error" style="display:none; color:#f05252; font-size:13px; margin-top:10px;"></p>
+        </div>
+
         <div id="waiting-for-game" style="display:none; text-align:center; padding: 24px 0;">
           <div class="spinner" style="width:32px;height:32px;border:3px solid #2e3348;border-top-color:#4f8ef7;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px;"></div>
           <p style="color:#8892a4;">รอผู้ดำเนินเกมเริ่มสถานการณ์...</p>
           <p id="joined-as" style="margin-top:10px;font-size:13px;color:#8892a4;"></p>
+          <div id="selected-cards-display" style="margin-top:16px;"></div>
         </div>
 
         <div id="join-form">

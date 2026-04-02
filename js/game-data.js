@@ -243,6 +243,47 @@ export function applyScores(situationIndex, winningOption, currentPlayerScores, 
   return { newPlayerScores, newCompany, playerDeltas, companyDeltas };
 }
 
+// ── Special Cards ──────────────────────────────────────────────
+export const SPECIAL_CARDS = {
+  consulting_report: {
+    id: 'consulting_report',
+    name: 'Consulting Firm Report',
+    nameTh: 'รายงานบริษัทที่ปรึกษา',
+    description: 'เปิดเผยผลกระทบ KPI บริษัทของทั้งตัวเลือก A และ B ให้ทั้งกลุ่มเห็น',
+    icon: '📊',
+    useDuring: 'voting',
+  },
+  shadow_capital: {
+    id: 'shadow_capital',
+    name: 'Shadow Capital Injection',
+    nameTh: 'ฉีดทุนลับ',
+    description: 'ป้องกันไม่ให้ KPI บริษัททุกตัวต่ำกว่า 0 ในรอบนี้',
+    icon: '💰',
+    useDuring: 'voting',
+  },
+  global_pr: {
+    id: 'global_pr',
+    name: 'Global PR Blitz',
+    nameTh: 'แคมเปญ PR ระดับโลก',
+    description: 'เลือก KPI บริษัท 1 ตัว แล้วเพิ่ม +20 ทันที',
+    icon: '📢',
+    useDuring: 'anytime',
+    requiresTarget: 'company_kpi',
+  },
+  employee_shield: {
+    id: 'employee_shield',
+    name: 'Employee Shield Policy',
+    nameTh: 'นโยบายคุ้มครองพนักงาน',
+    description: 'ป้องกันผู้เล่น 1 คนจากการถูกไล่ออก (KPI จะไม่ต่ำกว่า 0)',
+    icon: '🛡️',
+    useDuring: 'anytime',
+    requiresTarget: 'player',
+  },
+};
+
+export const ALL_CARD_IDS = Object.keys(SPECIAL_CARDS);
+export const MAX_CARDS_PER_GROUP = 2;
+
 /** แสดงค่าเปลี่ยนแปลงเช่น "+15" หรือ "-10" */
 export function fmtDelta(n) {
   return n > 0 ? `+${n}` : `${n}`;

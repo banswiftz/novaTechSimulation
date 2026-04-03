@@ -9,11 +9,11 @@
 <body>
 
   <!-- Removed/Reset overlay -->
-  <div id="removed-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,17,23,.95); z-index:9999; align-items:center; justify-content:center; text-align:center; padding:24px;">
+  <div id="removed-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center; text-align:center; padding:24px;">
     <div>
       <div style="font-size:40px; margin-bottom:16px;">👋</div>
       <h2 id="removed-headline" style="font-size:22px; font-weight:700; margin-bottom:8px;">คุณถูกนำออกจากเกม</h2>
-      <p id="removed-sub" style="color:#8892a4; margin-bottom:24px;">ผู้ดำเนินเกมได้นำคุณออกจากเกมแล้ว</p>
+      <p id="removed-sub" style="color:#7A9A95; margin-bottom:24px;">ผู้ดำเนินเกมได้นำคุณออกจากเกมแล้ว</p>
       <a href="index.html" class="btn btn-primary">เข้าร่วมเกมใหม่</a>
     </div>
   </div>
@@ -40,7 +40,7 @@
           <div id="kpi-label" class="kpi-label">สุขภาพทางการเงิน</div>
         </div>
         <div id="fired-notice" style="display:none; text-align:center; margin-top:8px;">
-          <span style="color:#f05252; font-size:12px; font-weight:700;">ถูกไล่ออก</span>
+          <span style="color:#e04848; font-size:12px; font-weight:700;">ถูกไล่ออก</span>
         </div>
       </div>
 
@@ -80,10 +80,10 @@
     </div>
 
     <!-- Card activation modal -->
-    <div id="card-modal" style="display:none; position:fixed; inset:0; background:rgba(15,17,23,.9); z-index:9998; align-items:center; justify-content:center; padding:24px;">
+    <div id="card-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:9998; align-items:center; justify-content:center; padding:24px;">
       <div class="card" style="max-width:400px; width:100%;">
         <div id="card-modal-title" style="font-size:16px; font-weight:700; margin-bottom:8px;"></div>
-        <div id="card-modal-desc" style="font-size:13px; color:#8892a4; margin-bottom:16px;"></div>
+        <div id="card-modal-desc" style="font-size:13px; color:#7A9A95; margin-bottom:16px;"></div>
         <div id="card-modal-body"></div>
         <div style="display:flex; gap:8px; margin-top:16px;">
           <button class="btn btn-primary" id="card-modal-confirm" style="flex:1;">ยืนยัน</button>
@@ -122,7 +122,7 @@
           </button>
         </div>
 
-        <div id="voted-notice" style="display:none; margin-top:16px; color:#8892a4; font-size:14px;">
+        <div id="voted-notice" style="display:none; margin-top:16px; color:#7A9A95; font-size:14px;">
           ส่งโหวตแล้ว รอผลจากสมาชิกคนอื่น...
         </div>
       </div>
@@ -146,11 +146,11 @@
         <div id="outcome-section">
           <div class="card-title">การเปลี่ยนแปลงคะแนน</div>
           <div style="margin-bottom:12px;">
-            <div style="font-size:13px; color:#8892a4; margin-bottom:6px;">KPI ของฉัน</div>
+            <div style="font-size:13px; color:#7A9A95; margin-bottom:6px;">KPI ของฉัน</div>
             <div id="my-delta" class="delta-chips"></div>
           </div>
           <div>
-            <div style="font-size:13px; color:#8892a4; margin-bottom:6px;">ดัชนีบริษัท</div>
+            <div style="font-size:13px; color:#7A9A95; margin-bottom:6px;">ดัชนีบริษัท</div>
             <div id="company-deltas" class="delta-chips"></div>
           </div>
         </div>
@@ -181,32 +181,32 @@
   </div>
 
   <!-- Fired popup -->
-  <div id="fired-popup" style="display:none; position:fixed; inset:0; background:rgba(15,17,23,.92); z-index:9998; align-items:center; justify-content:center; padding:24px;">
+  <div id="fired-popup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.42); z-index:9998; align-items:center; justify-content:center; padding:24px;">
     <div class="card" style="max-width:420px; width:100%; text-align:center;">
       <div style="font-size:48px; margin-bottom:12px;">🚫</div>
-      <div style="font-size:20px; font-weight:700; color:#f05252; margin-bottom:8px;">คุณถูกไล่ออก</div>
-      <p id="fired-popup-msg" style="font-size:14px; color:#8892a4; margin-bottom:20px; line-height:1.6;"></p>
+      <div style="font-size:20px; font-weight:700; color:#e04848; margin-bottom:8px;">คุณถูกไล่ออก</div>
+      <p id="fired-popup-msg" style="font-size:14px; color:#7A9A95; margin-bottom:20px; line-height:1.6;"></p>
       <button class="btn btn-primary" id="fired-popup-close">รับทราบ</button>
     </div>
   </div>
 
   <!-- Fire vote popup (voter only) -->
-  <div id="fire-vote-popup" style="display:none; position:fixed; inset:0; background:rgba(15,17,23,.95); z-index:9999; align-items:center; justify-content:center; padding:24px;">
+  <div id="fire-vote-popup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center; padding:24px;">
     <div class="card" style="max-width:420px; width:100%; text-align:center;">
       <div style="font-size:48px; margin-bottom:12px;">⚠️</div>
-      <div style="font-size:20px; font-weight:700; color:#f59e0b; margin-bottom:8px;">KPI บริษัทติดลบ!</div>
-      <p style="font-size:14px; color:#8892a4; margin-bottom:16px; line-height:1.6;">ดัชนีชี้วัดบริษัทตกต่ำกว่า 0 — กลุ่มต้องไล่ออกสมาชิก 1 คน<br>KPI ที่ติดลบถูกรีเซ็ตเป็น 5 แล้ว</p>
+      <div style="font-size:20px; font-weight:700; color:#e08a00; margin-bottom:8px;">KPI บริษัทติดลบ!</div>
+      <p style="font-size:14px; color:#7A9A95; margin-bottom:16px; line-height:1.6;">ดัชนีชี้วัดบริษัทตกต่ำกว่า 0 — กลุ่มต้องไล่ออกสมาชิก 1 คน<br>KPI ที่ติดลบถูกรีเซ็ตเป็น 5 แล้ว</p>
       <div id="fire-vote-list" style="margin-bottom:16px;"></div>
-      <button class="btn btn-primary" id="fire-vote-confirm" disabled style="width:100%; background:#f05252;">ยืนยันไล่ออก</button>
+      <button class="btn btn-primary" id="fire-vote-confirm" disabled style="width:100%; background:#e04848;">ยืนยันไล่ออก</button>
     </div>
   </div>
 
   <!-- Fire vote waiting popup (non-voter) -->
-  <div id="fire-vote-waiting" style="display:none; position:fixed; inset:0; background:rgba(15,17,23,.95); z-index:9999; align-items:center; justify-content:center; padding:24px;">
+  <div id="fire-vote-waiting" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center; padding:24px;">
     <div class="card" style="max-width:420px; width:100%; text-align:center;">
       <div style="font-size:48px; margin-bottom:12px;">⚠️</div>
-      <div style="font-size:20px; font-weight:700; color:#f59e0b; margin-bottom:8px;">KPI บริษัทติดลบ!</div>
-      <p style="font-size:14px; color:#8892a4; margin-bottom:16px; line-height:1.6;">ดัชนีชี้วัดบริษัทตกต่ำกว่า 0 — กลุ่มต้องไล่ออกสมาชิก 1 คน<br>รอผู้โหวตเลือก...</p>
+      <div style="font-size:20px; font-weight:700; color:#e08a00; margin-bottom:8px;">KPI บริษัทติดลบ!</div>
+      <p style="font-size:14px; color:#7A9A95; margin-bottom:16px; line-height:1.6;">ดัชนีชี้วัดบริษัทตกต่ำกว่า 0 — กลุ่มต้องไล่ออกสมาชิก 1 คน<br>รอผู้โหวตเลือก...</p>
       <div class="spinner"></div>
     </div>
   </div>

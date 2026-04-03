@@ -255,17 +255,17 @@ function buildGroupRow(gNum) {
     const si  = sit.index;
     const res = groupResults[gNum]?.[si];
     if (res !== undefined) {
-      const color = res === 'A' ? '#4f8ef7' : res === 'B' ? '#f59e0b' : '#f05252';
+      const color = res === 'A' ? '#2563eb' : res === 'B' ? '#e08a00' : '#e04848';
       return `<td style="text-align:center;"><span style="font-weight:700; color:${color};">${res}</span></td>`;
     }
     if (si === sitIdx && phase === 'voting') {
       const voter     = groupPlayers.find(p => p.is_voter);
       const voterVote = voter ? votes.find(v => v.player_id === voter.id) : null;
       if (voterVote) {
-        const color = voterVote.choice === 'A' ? '#4f8ef7' : '#f59e0b';
+        const color = voterVote.choice === 'A' ? '#2563eb' : '#e08a00';
         return `<td style="text-align:center;"><span style="font-weight:700; color:${color};">${voterVote.choice}</span></td>`;
       }
-      return `<td style="text-align:center; color:#8892a4; font-size:18px; line-height:1;">?</td>`;
+      return `<td style="text-align:center; color:#7A9A95; font-size:18px; line-height:1;">?</td>`;
     }
     return `<td></td>`;
   }).join('');
@@ -285,7 +285,7 @@ function buildGroupRow(gNum) {
   // Role KPI cells (editable) + player name underneath
   const roleCells = ROLES.map(role => {
     const p = groupPlayers.find(pl => pl.role === role);
-    if (!p) return `<td style="text-align:center; color:#444;">—</td>`;
+    if (!p) return `<td style="text-align:center; color:#ccc;">—</td>`;
     const fired = p.kpi_score <= FIRED_THRESHOLD;
     const voterMark = p.is_voter ? ' ★' : '';
     return `<td style="text-align:center;">
@@ -295,12 +295,12 @@ function buildGroupRow(gNum) {
         ${fired ? 'text-decoration:line-through;' : ''}
         background:transparent; border:1px solid transparent; border-radius:4px; padding:2px;
         font-size:13px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='transparent'" />
-      <button class="remove-player-btn" data-id="${p.id}" style="background:none;border:none;cursor:pointer;color:#f05252;font-size:10px;padding:0 0 0 2px;opacity:0.5;" title="นำ ${p.name} ออก">✕</button>
-      <div style="font-size:10px; color:#8892a4; margin-top:1px; opacity:0.7;">${p.name}${voterMark}</div>
+      <button class="remove-player-btn" data-id="${p.id}" style="background:none;border:none;cursor:pointer;color:#e04848;font-size:10px;padding:0 0 0 2px;opacity:0.5;" title="นำ ${p.name} ออก">✕</button>
+      <div style="font-size:10px; color:#7A9A95; margin-top:1px; opacity:0.7;">${p.name}${voterMark}</div>
     </td>`;
   }).join('');
 
-  const fireTag = pendingFire ? ' <span style="color:#f59e0b; font-size:11px; font-weight:600;">⚠ รอไล่ออก</span>' : '';
+  const fireTag = pendingFire ? ' <span style="color:#e08a00; font-size:11px; font-weight:600;">⚠ รอไล่ออก</span>' : '';
 
   // Cards display
   const cards = allGroupCards[gNum] || [];
@@ -870,15 +870,15 @@ function subscribeToChanges() {
 
 // ── Helpers ───────────────────────────────────────────────────
 function scoreColor(v) {
-  if (v <= FIRED_THRESHOLD) return '#666';
-  if (v <= 20) return '#f05252';
-  if (v <= 35) return '#f59e0b';
-  return '#22c55e';
+  if (v <= FIRED_THRESHOLD) return '#aaa';
+  if (v <= 20) return '#e04848';
+  if (v <= 35) return '#e08a00';
+  return '#1a9a4a';
 }
 function metricColor(v) {
-  if (v <= GAME_OVER_THRESHOLD) return '#f05252';
-  if (v <= 25) return '#f59e0b';
-  return '#e8eaf0';
+  if (v <= GAME_OVER_THRESHOLD) return '#e04848';
+  if (v <= 25) return '#e08a00';
+  return '#1E3A5F';
 }
 function showToast(msg, type = '') {
   const container = document.getElementById('toast-container');

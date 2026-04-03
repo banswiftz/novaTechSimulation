@@ -572,22 +572,43 @@ async function showEndScreen(player, company) {
     .eq('group_number', groupNumber)
     .order('kpi_score', { ascending: false });
 
-  const companyOk = company &&
-    company.cash_flow > GAME_OVER_THRESHOLD &&
-    company.brand_trust > GAME_OVER_THRESHOLD &&
-    company.employee_morale > GAME_OVER_THRESHOLD;
-  const noFired  = (groupPlayers || []).every(p => p.kpi_score > FIRED_THRESHOLD);
-  const survived = companyOk && noFired;
+  const firedPlayers = (groupPlayers || []).filter(p => p.kpi_score <= FIRED_THRESHOLD);
+  const survived = firedPlayers.length === 0;
+  const fireCount = company?.fire_count ?? 0;
 
   document.getElementById('end-headline').textContent = survived ? 'NovaTech รอดพ้น!' : 'NovaTech ล้มเหลว';
   document.getElementById('end-sub').textContent = survived
     ? 'กลุ่มของคุณผ่านพ้นวิกฤตทั้งหมดได้ ยอดเยี่ยมมาก!'
-    : !companyOk
-      ? 'กลุ่มของคุณไม่สามารถรักษาดัชนีชี้วัดของบริษัทไว้ได้'
-      : 'มีผู้บริหารถูกไล่ออก — ทีมไม่สมบูรณ์';
+    : 'มีผู้บริหารถูกไล่ออก — ทีมไม่สมบูรณ์';
 
   const container = document.getElementById('final-scores');
-  container.innerHTML = `<div class="card-title" style="margin-bottom:10px;">กลุ่ม ${groupNumber} — คะแนน KPI สุดท้าย</div>`;
+  container.innerHTML = '';
+
+  // Summary stats
+  const summary = document.createElement('div');
+  summary.style.cssText = 'margin-bottom:16px; padding:12px; border-radius:8px; background:var(--surface2); text-align:left;';
+  summary.innerHTML = `
+    <div style="font-weight:700; font-size:14px; margin-bottom:8px;">สรุปสถานการณ์ของกลุ่ม ${groupNumber}</div>
+    <div style="display:flex; flex-direction:column; gap:6px; font-size:13px;">
+      <div style="display:flex; justify-content:space-between;">
+        <span style="color:#7A9A95;">KPI บริษัทติดลบ</span>
+        <span style="font-weight:700; color:${fireCount > 0 ? '#e04848' : '#22c55e'};">${fireCount} ครั้ง</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span style="color:#7A9A95;">สมาชิกถูกไล่ออก</span>
+        <span style="font-weight:700; color:${firedPlayers.length > 0 ? '#e04848' : '#22c55e'};">${firedPlayers.length} คน</span>
+      </div>
+    </div>
+  `;
+  container.appendChild(summary);
+
+  // Player scores
+  const scoresTitle = document.createElement('div');
+  scoresTitle.className = 'card-title';
+  scoresTitle.style.marginBottom = '10px';
+  scoresTitle.textContent = 'คะแนน KPI สุดท้าย';
+  container.appendChild(scoresTitle);
+
   for (const p of (groupPlayers || [])) {
     const fired = p.kpi_score <= FIRED_THRESHOLD;
     const row = document.createElement('div');
@@ -603,7 +624,7 @@ async function showEndScreen(player, company) {
 
   if (company) {
     document.getElementById('end-company-result').textContent =
-      `กลุ่ม ${groupNumber} ผลสุดท้าย — เงินสด: ${company.cash_flow} | แบรนด์: ${company.brand_trust} | ขวัญกำลังใจ: ${company.employee_morale}`;
+      `เงินสด: ${company.cash_flow} | แบรนด์: ${company.brand_trust} | ขวัญกำลังใจ: ${company.employee_morale}`;
   }
 }
 
@@ -620,7 +641,11 @@ function updateKpi(score) {
 
   // Show fired popup once on transition (not on initial page load)
   if (initialized && nowFired && !wasFired && !firedPopupShown) {
-    firedPopupMsg.textContent = `คุณ ${playerName} ตำแหน่ง ${playerRole} ถูกไล่ออกเนื่องจาก KPI ต่ำกว่าที่กำหนด`;
+    // Check if fired by group vote or by personal KPI dropping
+    const firedByVote = fireVoteShown || fireVoteWaiting.style.display === 'flex';
+    firedPopupMsg.textContent = firedByVote
+      ? `คุณ ${playerName} ตำแหน่ง ${playerRole} ถูกกลุ่มโหวตให้ออกจากบริษัท`
+      : `คุณ ${playerName} ตำแหน่ง ${playerRole} ถูกไล่ออกเนื่องจาก KPI ต่ำกว่าที่กำหนด`;
     firedPopup.style.display = 'flex';
     firedPopupShown = true;
   }
@@ -712,6 +737,14 @@ async function checkFireVote(company) {
     .order('created_at');
 
   const eligible = (groupPlayers || []).filter(p => p.kpi_score > FIRED_THRESHOLD);
+
+  // No one left to fire → auto-clear
+  if (eligible.length === 0) {
+    await supabase.from('group_scores').update({ pending_fire: false }).eq('group_number', groupNumber);
+    fireVotePopup.style.display = 'none';
+    showToast('ไม่มีสมาชิกที่สามารถไล่ออกได้ — ข้ามการไล่ออก', 'error');
+    return;
+  }
 
   fireVoteList.innerHTML = '';
   let selectedId = null;

@@ -540,6 +540,7 @@ revealBtn.addEventListener('click', async () => {
       showToast(`กลุ่ม ${gNum}: ${reasons.join(', ')} ติดลบ → รีเซ็ตเป็น 5 — ต้องไล่ออก 1 คน`, 'error');
     }
 
+    const currentFireCount = (groupScores[gNum]?.fire_count ?? 0);
     const [companyRes, resultRes, ...playerResults] = await Promise.all([
       supabase.from('group_scores').upsert({
         group_number:    gNum,
@@ -547,6 +548,7 @@ revealBtn.addEventListener('click', async () => {
         brand_trust:     newCompany.brand_trust,
         employee_morale: newCompany.employee_morale,
         pending_fire:    needsFireVote,
+        fire_count:      needsFireVote ? currentFireCount + 1 : currentFireCount,
       }, { onConflict: 'group_number' }),
       supabase.from('group_results').upsert({
         group_number:    gNum,

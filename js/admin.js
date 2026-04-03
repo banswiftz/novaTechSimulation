@@ -481,6 +481,11 @@ revealBtn.addEventListener('click', async () => {
 
     let newCompany, newPlayerScores, winner, playerUpdates;
 
+    // Snapshot who is already fired BEFORE applying scores
+    const alreadyFiredIds = new Set(
+      groupPlayers.filter(p => p.kpi_score <= FIRED_THRESHOLD).map(p => p.id)
+    );
+
     if (!voterVote) {
       // No-vote penalty (X): company -10 each, KPI unchanged
       winner = 'X';
@@ -543,9 +548,9 @@ revealBtn.addEventListener('click', async () => {
       if (newCompany.employee_morale <= GAME_OVER_THRESHOLD) newCompany.employee_morale = 5;
     }
 
-    // Build player DB updates from final local state (already includes layoff)
+    // Build player DB updates — skip players who were already fired before this round
     playerUpdates = groupPlayers
-      .filter(p => p.kpi_score > FIRED_THRESHOLD || p.id === layoffPlayerId)
+      .filter(p => !alreadyFiredIds.has(p.id))
       .map(p => {
         const update = { kpi_score: p.kpi_score };
         if (p.id === layoffPlayerId) update.layoff_reason = layoffReason;

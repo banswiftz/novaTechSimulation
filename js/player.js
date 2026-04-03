@@ -102,6 +102,7 @@ let groupCards      = [];  // [{card_type, is_used, used_at_situation, card_meta
 let firedPopupShown = false;
 let fireVoteShown   = false;
 let initialized     = false;
+let currentPhase    = 'waiting';
 
 // ── Init ─────────────────────────────────────────────────────
 async function init() {
@@ -179,9 +180,9 @@ function subscribeToChanges() {
       const { data } = await supabase.from('group_cards').select('*').eq('group_number', groupNumber);
       groupCards = data || [];
       renderCardsPanel();
-      // If consulting report was just used, show deltas on voting screen
-      const consultingUsed = groupCards.find(c => c.card_type === 'consulting_report' && c.is_used);
-      if (consultingUsed && currentSitIdx >= 0 && currentSitIdx < SITUATIONS.length) {
+      // If consulting report was just used on THIS situation, show deltas on voting screen
+      const consultingUsed = groupCards.find(c => c.card_type === 'consulting_report' && c.is_used && c.used_at_situation === currentSitIdx);
+      if (consultingUsed && currentPhase === 'voting' && currentSitIdx >= 0 && currentSitIdx < SITUATIONS.length) {
         showConsultingDeltas();
       }
     })
@@ -212,7 +213,7 @@ function renderCardsPanel() {
     const el = document.createElement('div');
     el.className = `special-card-slot ${gc.is_used ? 'used' : 'available'}`;
 
-    const canActivate = isVoter && !gc.is_used && currentSitIdx >= 0 && currentSitIdx < SITUATIONS.length;
+    const canActivate = isVoter && !gc.is_used && currentPhase === 'voting' && currentSitIdx >= 0 && currentSitIdx < SITUATIONS.length;
 
     el.innerHTML = `
       <div class="special-card-slot-icon">${card.icon}</div>
@@ -363,6 +364,7 @@ async function markCardUsed(cardType, metadata = null) {
 // ── Apply game state ──────────────────────────────────────────
 async function applyGameState(gs, company, player) {
   currentSitIdx = gs.current_situation_index;
+  currentPhase  = gs.phase || 'waiting';
   updateProgress(currentSitIdx);
   renderCardsPanel(); // re-render cards with current situation context
 
@@ -423,9 +425,9 @@ function showVoting(sit, alreadyVoted) {
   document.getElementById('opt-b-title').textContent  = sit.optionB.label;
   document.getElementById('opt-b-desc').textContent   = sit.optionB.description;
 
-  // Check if Consulting Report card is used → show deltas for all members
+  // Check if Consulting Report card is used on THIS situation → show deltas
   clearConsultingDeltas();
-  const consultingCard = groupCards.find(c => c.card_type === 'consulting_report' && c.is_used);
+  const consultingCard = groupCards.find(c => c.card_type === 'consulting_report' && c.is_used && c.used_at_situation === currentSitIdx);
   if (consultingCard) {
     showConsultingDeltas();
   }

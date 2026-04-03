@@ -335,13 +335,18 @@ function renderGameOver() {
   }
 }
 
+function hasPendingFire() {
+  return Object.values(groupScores).some(gs => gs.pending_fire);
+}
+
 function updateButtons() {
   const sitIdx = gameState?.current_situation_index ?? -1;
   const phase  = gameState?.phase ?? 'waiting';
+  const firePending = hasPendingFire();
 
   // Sync the select to current state
   jumpSelect.value = String(sitIdx);
-  jumpSelect.disabled = phase === 'voting';
+  jumpSelect.disabled = phase === 'voting' || firePending;
 
   revealBtn.disabled = phase !== 'voting' || sitIdx < 0;
 
@@ -352,7 +357,11 @@ function updateButtons() {
   );
 
   // Start/Next button
-  if (sitIdx === -1) {
+  if (firePending) {
+    startNextBtn.textContent = '⚠ รอโหวตไล่ออก...';
+    startNextBtn.disabled = true;
+    startNextBtn.className = 'btn btn-ghost btn-sm';
+  } else if (sitIdx === -1) {
     // Game not started
     startNextBtn.textContent = '▶ เริ่มเกม';
     startNextBtn.disabled = false;
@@ -382,6 +391,12 @@ jumpSelect.addEventListener('change', async () => {
 
   const currentIdx = gameState?.current_situation_index ?? -1;
   if (targetIdx === currentIdx) return;
+
+  if (hasPendingFire()) {
+    showToast('ต้องรอให้ทุกกลุ่มโหวตไล่ออกเสร็จก่อน', 'error');
+    jumpSelect.value = String(currentIdx);
+    return;
+  }
 
   jumpSelect.disabled = true;
   const { error } = await supabase.from('game_state').update({

@@ -143,7 +143,7 @@ async function init() {
   ]);
 
   groupCards = cards || [];
-  if (player)    updateKpi(player.kpi_score);
+  if (player)    updateKpi(player.kpi_score, player.layoff_reason);
   if (company)   updateCompany(company);
   renderCardsPanel();
   if (gameState) await applyGameState(gameState, company, player);
@@ -190,7 +190,7 @@ function subscribeToChanges() {
       event: 'UPDATE', schema: 'public', table: 'players',
       filter: `id=eq.${playerId}`
     }, payload => {
-      updateKpi(payload.new.kpi_score);
+      updateKpi(payload.new.kpi_score, payload.new.layoff_reason);
     })
     .on('postgres_changes', {
       event: 'INSERT', schema: 'public', table: 'group_results',
@@ -712,7 +712,7 @@ async function showEndScreen(player, company) {
 }
 
 // ── Update KPI ────────────────────────────────────────────────
-function updateKpi(score) {
+function updateKpi(score, layoffReason) {
   const wasFired = myKpiScore <= FIRED_THRESHOLD;
   const nowFired = score <= FIRED_THRESHOLD;
 
@@ -724,7 +724,8 @@ function updateKpi(score) {
 
   // Show fired popup once on transition (not on initial page load)
   if (initialized && nowFired && !wasFired && !firedPopupShown) {
-    firedPopupMsg.textContent = `คุณ ${playerName} ตำแหน่ง ${playerRole} ถูก lay off เนื่องจาก KPI ต่ำที่สุดในกลุ่ม`;
+    const reason = layoffReason || 'KPI ต่ำที่สุดในกลุ่ม';
+    firedPopupMsg.textContent = `คุณ ${playerName} ตำแหน่ง ${playerRole} ถูก lay off — ${reason}`;
     firedPopup.style.display = 'flex';
     firedPopupShown = true;
   }

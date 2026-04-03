@@ -39,7 +39,6 @@ CREATE TABLE public.group_scores (
   cash_flow integer DEFAULT 50,
   brand_trust integer DEFAULT 50,
   employee_morale integer DEFAULT 50,
-  pending_fire boolean DEFAULT false,
   fire_count integer DEFAULT 0,
   CONSTRAINT group_scores_pkey PRIMARY KEY (group_number)
 );
@@ -52,6 +51,7 @@ CREATE TABLE public.players (
   created_at timestamp with time zone DEFAULT now(),
   group_number integer NOT NULL DEFAULT 1,
   is_voter boolean NOT NULL DEFAULT false,
+  layoff_reason text,
   CONSTRAINT players_pkey PRIMARY KEY (id),
   CONSTRAINT players_group_number_role_key UNIQUE (group_number, role)
 );

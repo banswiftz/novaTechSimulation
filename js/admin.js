@@ -507,6 +507,7 @@ revealBtn.addEventListener('click', async () => {
     // Check if any company KPI went ≤ 0 → reset to +5 and auto-layoff lowest KPI player
     let autoLayoff = false;
     let layoffPlayerId = null;
+    let layoffReason = null;
     if (newCompany.cash_flow <= GAME_OVER_THRESHOLD ||
         newCompany.brand_trust <= GAME_OVER_THRESHOLD ||
         newCompany.employee_morale <= GAME_OVER_THRESHOLD) {
@@ -517,12 +518,17 @@ revealBtn.addEventListener('click', async () => {
       if (newCompany.employee_morale <= GAME_OVER_THRESHOLD) { reasons.push('ขวัญกำลังใจ'); newCompany.employee_morale = 5; }
 
       // Auto-layoff: fire the player with lowest KPI (using post-situation scores)
+      // If tied, pick randomly among the lowest
       const alive = groupPlayers.filter(p => p.kpi_score > FIRED_THRESHOLD);
       if (alive.length > 0) {
-        const lowest = alive.reduce((a, b) => (a.kpi_score <= b.kpi_score ? a : b));
+        const minScore = Math.min(...alive.map(p => p.kpi_score));
+        const tied = alive.filter(p => p.kpi_score === minScore);
+        const lowest = tied[Math.floor(Math.random() * tied.length)];
+        const reasonText = reasons.join(', ');
         lowest.kpi_score = FIRED_THRESHOLD;
         layoffPlayerId = lowest.id;
-        showToast(`กลุ่ม ${gNum}: ${reasons.join(', ')} ติดลบ → ${lowest.name} (${lowest.role}) ถูก lay off (KPI ต่ำสุด)`, 'error');
+        layoffReason = `${reasonText} ติดลบ → ถูก lay off เนื่องจาก KPI ต่ำที่สุดในกลุ่ม`;
+        showToast(`กลุ่ม ${gNum}: ${reasonText} ติดลบ → ${lowest.name} (${lowest.role}) ถูก lay off (KPI ต่ำสุด)`, 'error');
       } else {
         showToast(`กลุ่ม ${gNum}: ${reasons.join(', ')} ติดลบ → ไม่มีสมาชิกเหลือให้ lay off`, 'error');
       }
@@ -531,9 +537,11 @@ revealBtn.addEventListener('click', async () => {
     // Build player DB updates from final local state (already includes layoff)
     playerUpdates = groupPlayers
       .filter(p => p.kpi_score > FIRED_THRESHOLD || p.id === layoffPlayerId)
-      .map(p =>
-        supabase.from('players').update({ kpi_score: p.kpi_score }).eq('id', p.id)
-      );
+      .map(p => {
+        const update = { kpi_score: p.kpi_score };
+        if (p.id === layoffPlayerId) update.layoff_reason = layoffReason;
+        return supabase.from('players').update(update).eq('id', p.id);
+      });
 
     const currentFireCount = (groupScores[gNum]?.fire_count ?? 0);
     const [companyRes, resultRes, ...playerResults] = await Promise.all([
@@ -577,8 +585,20 @@ revealBtn.addEventListener('click', async () => {
   renderGameOver();
 });
 
-resetBtn.addEventListener('click', async () => {
-  if (!confirm('รีเซ็ตเกมทั้งหมด? การดำเนินการนี้จะลบผู้เล่น โหวต และคะแนนทั้งหมด')) return;
+const resetModal        = document.getElementById('reset-modal');
+const resetModalConfirm = document.getElementById('reset-modal-confirm');
+const resetModalCancel  = document.getElementById('reset-modal-cancel');
+
+resetBtn.addEventListener('click', () => {
+  resetModal.style.display = 'flex';
+});
+
+resetModalCancel.addEventListener('click', () => {
+  resetModal.style.display = 'none';
+});
+
+resetModalConfirm.addEventListener('click', async () => {
+  resetModal.style.display = 'none';
 
   await Promise.all([
     supabase.from('votes').delete().neq('id', '00000000-0000-0000-0000-000000000000'),

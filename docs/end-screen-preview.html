@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>End Screen Preview — NovaTech</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#0f1117; color:#e8eaf0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; padding:20px; }
+
+    .preview-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:900px; margin:0 auto; }
+    .preview-label { font-size:13px; color:#8892a4; margin-bottom:8px; font-weight:600; text-align:center; }
+
+    .end-card {
+      background:#1a1d27; border:1px solid #2a2d3a; border-radius:12px;
+      padding:24px; text-align:center;
+    }
+
+    .grade-icon { width:56px; height:56px; margin:0 auto 12px; }
+    .grade-icon svg { width:100%; height:100%; }
+
+    .grade-icon.a svg { color:#22c55e; filter:drop-shadow(0 0 8px rgba(34,197,94,0.4)); }
+    .grade-icon.b svg { color:#4f8ef7; filter:drop-shadow(0 0 8px rgba(79,142,247,0.3)); }
+    .grade-icon.c svg { color:#f59e0b; filter:drop-shadow(0 0 8px rgba(245,158,11,0.3)); }
+    .grade-icon.f svg { color:#f05252; filter:drop-shadow(0 0 8px rgba(240,82,82,0.4)); }
+
+    .grade-letter { font-size:32px; font-weight:800; margin-bottom:4px; }
+    .grade-letter.a { color:#22c55e; }
+    .grade-letter.b { color:#4f8ef7; }
+    .grade-letter.c { color:#f59e0b; }
+    .grade-letter.f { color:#f05252; }
+
+    .end-headline { font-size:18px; font-weight:700; margin-bottom:4px; }
+    .end-sub { font-size:13px; color:#8892a4; margin-bottom:16px; line-height:1.5; }
+
+    .summary-box {
+      background:#12141c; border-radius:8px; padding:12px;
+      margin-bottom:16px; text-align:left;
+    }
+    .summary-title { font-size:13px; font-weight:700; margin-bottom:8px; }
+    .summary-row { display:flex; justify-content:space-between; font-size:13px; padding:3px 0; }
+    .summary-label { color:#8892a4; }
+    .summary-val { font-weight:700; }
+    .summary-val.green { color:#22c55e; }
+    .summary-val.red { color:#f05252; }
+    .summary-val.yellow { color:#f59e0b; }
+
+    .scores-title { font-size:13px; font-weight:700; margin-bottom:8px; text-align:left; }
+    .score-row {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:6px 8px; border-radius:6px; margin-bottom:4px;
+      background:#12141c;
+    }
+    .score-row.fired { opacity:0.6; }
+    .player-name { font-size:13px; font-weight:600; }
+    .player-role { font-size:11px; color:#8892a4; }
+    .fired-tag { font-size:10px; color:#f05252; font-weight:700; background:rgba(240,82,82,0.15); padding:2px 6px; border-radius:4px; margin-left:6px; }
+    .score-num { font-size:14px; font-weight:700; }
+
+    .company-result { font-size:12px; color:#8892a4; margin-top:12px; }
+
+    h1 { text-align:center; margin-bottom:24px; font-size:16px; color:#8892a4; font-weight:400; }
+  </style>
+</head>
+<body>
+
+<h1>End Screen Preview — 4 ระดับ</h1>
+
+<div class="preview-grid">
+
+  <!-- ═══ Grade A ═══ -->
+  <div>
+    <div class="preview-label">เกรด A — รอดตัว + บริษัทแข็งแกร่ง</div>
+    <div class="end-card">
+      <div class="grade-icon a">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+      </div>
+      <div class="grade-letter a">A</div>
+      <div class="end-headline">NovaTech รุ่งเรือง!</div>
+      <div class="end-sub">กลุ่มของคุณนำบริษัทผ่านพ้นวิกฤตทั้งหมดได้<br>โดยไม่มี KPI บริษัทติดลบแม้แต่ครั้งเดียว</div>
+
+      <div class="summary-box">
+        <div class="summary-title">สรุปสถานการณ์ของกลุ่ม 1</div>
+        <div class="summary-row">
+          <span class="summary-label">KPI บริษัทติดลบ</span>
+          <span class="summary-val green">0 ครั้ง</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">สมาชิกถูกไล่ออก</span>
+          <span class="summary-val green">0 คน</span>
+        </div>
+      </div>
+
+      <div class="scores-title">คะแนน KPI สุดท้าย</div>
+      <div class="score-row"><span class="player-name">สมชาย <span class="player-role">(CFO)</span></span><span class="score-num" style="color:#22c55e">65</span></div>
+      <div class="score-row"><span class="player-name">สมหญิง <span class="player-role">(CMO)</span></span><span class="score-num" style="color:#22c55e">40</span></div>
+      <div class="score-row"><span class="player-name">วิชัย <span class="player-role">(COO)</span></span><span class="score-num" style="color:#22c55e">55</span></div>
+      <div class="score-row"><span class="player-name">พิมพ์ <span class="player-role">(CHRO)</span></span><span class="score-num" style="color:#f59e0b">30</span></div>
+      <div class="score-row"><span class="player-name">ธนา <span class="player-role">(CLO)</span></span><span class="score-num" style="color:#22c55e">45</span></div>
+
+      <div class="company-result">เงินสด: 45 | แบรนด์: 60 | ขวัญกำลังใจ: 35</div>
+    </div>
+  </div>
+
+  <!-- ═══ Grade B ═══ -->
+  <div>
+    <div class="preview-label">เกรด B — รอดตัว + บริษัทรอดหวุดหวิด (1-2 ครั้ง)</div>
+    <div class="end-card">
+      <div class="grade-icon b">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+      </div>
+      <div class="grade-letter b">B</div>
+      <div class="end-headline">NovaTech รอดหวุดหวิด</div>
+      <div class="end-sub">บริษัทเคยเข้าสู่ภาวะวิกฤตแต่ยังคงประคองตัวมาได้<br>คุณรอดตัวจากการถูกไล่ออก</div>
+
+      <div class="summary-box">
+        <div class="summary-title">สรุปสถานการณ์ของกลุ่ม 3</div>
+        <div class="summary-row">
+          <span class="summary-label">KPI บริษัทติดลบ</span>
+          <span class="summary-val yellow">1 ครั้ง</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">สมาชิกถูกไล่ออก</span>
+          <span class="summary-val red">1 คน</span>
+        </div>
+      </div>
+
+      <div class="scores-title">คะแนน KPI สุดท้าย</div>
+      <div class="score-row"><span class="player-name">สมชาย <span class="player-role">(CFO)</span></span><span class="score-num" style="color:#22c55e">40</span></div>
+      <div class="score-row"><span class="player-name">สมหญิง <span class="player-role">(CMO)</span></span><span class="score-num" style="color:#f59e0b">25</span></div>
+      <div class="score-row"><span class="player-name">วิชัย <span class="player-role">(COO)</span></span><span class="score-num" style="color:#f05252">10</span></div>
+      <div class="score-row"><span class="player-name">พิมพ์ <span class="player-role">(CHRO)</span></span><span class="score-num" style="color:#f59e0b">35</span></div>
+      <div class="score-row fired"><span class="player-name">ธนา <span class="player-role">(CLO)</span><span class="fired-tag">ถูกไล่ออก</span></span><span class="score-num" style="color:#666">0</span></div>
+
+      <div class="company-result">เงินสด: 30 | แบรนด์: 5 | ขวัญกำลังใจ: 40</div>
+    </div>
+  </div>
+
+  <!-- ═══ Grade C ═══ -->
+  <div>
+    <div class="preview-label">เกรด C — รอดตัว + บริษัทล้มเหลว (3+ ครั้ง)</div>
+    <div class="end-card">
+      <div class="grade-icon c">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <div class="grade-letter c">C</div>
+      <div class="end-headline">NovaTech ล้มเหลว</div>
+      <div class="end-sub">บริษัทเข้าสู่ภาวะวิกฤตซ้ำแล้วซ้ำเล่า<br>แต่คุณยังรอดตัวจากการถูกไล่ออก</div>
+
+      <div class="summary-box">
+        <div class="summary-title">สรุปสถานการณ์ของกลุ่ม 5</div>
+        <div class="summary-row">
+          <span class="summary-label">KPI บริษัทติดลบ</span>
+          <span class="summary-val red">3 ครั้ง</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">สมาชิกถูกไล่ออก</span>
+          <span class="summary-val red">3 คน</span>
+        </div>
+      </div>
+
+      <div class="scores-title">คะแนน KPI สุดท้าย</div>
+      <div class="score-row"><span class="player-name">สมชาย <span class="player-role">(CFO)</span></span><span class="score-num" style="color:#f59e0b">25</span></div>
+      <div class="score-row"><span class="player-name">สมหญิง <span class="player-role">(CMO)</span></span><span class="score-num" style="color:#f05252">5</span></div>
+      <div class="score-row fired"><span class="player-name">วิชัย <span class="player-role">(COO)</span><span class="fired-tag">ถูกไล่ออก</span></span><span class="score-num" style="color:#666">0</span></div>
+      <div class="score-row fired"><span class="player-name">พิมพ์ <span class="player-role">(CHRO)</span><span class="fired-tag">ถูกไล่ออก</span></span><span class="score-num" style="color:#666">0</span></div>
+      <div class="score-row fired"><span class="player-name">ธนา <span class="player-role">(CLO)</span><span class="fired-tag">ถูกไล่ออก</span></span><span class="score-num" style="color:#666">0</span></div>
+
+      <div class="company-result">เงินสด: 5 | แบรนด์: 5 | ขวัญกำลังใจ: 10</div>
+    </div>
+  </div>
+
+  <!-- ═══ Grade F ═══ -->
+  <div>
+    <div class="preview-label">เกรด F — ถูกไล่ออก</div>
+    <div class="end-card">
+      <div class="grade-icon f">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+      </div>
+      <div class="grade-letter f">F</div>
+      <div class="end-headline">คุณถูกไล่ออก</div>
+      <div class="end-sub">คุณไม่สามารถรักษาตำแหน่งของตัวเองไว้ได้<br>บริษัทยังคงดำเนินต่อไปโดยไม่มีคุณ</div>
+
+      <div class="summary-box">
+        <div class="summary-title">สรุปสถานการณ์ของกลุ่ม 2</div>
+        <div class="summary-row">
+          <span class="summary-label">KPI บริษัทติดลบ</span>
+          <span class="summary-val yellow">2 ครั้ง</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">สมาชิกถูกไล่ออก</span>
+          <span class="summary-val red">2 คน</span>
+        </div>
+      </div>
+
+      <div class="scores-title">คะแนน KPI สุดท้าย</div>
+      <div class="score-row"><span class="player-name">สมชาย <span class="player-role">(CFO)</span></span><span class="score-num" style="color:#22c55e">50</span></div>
+      <div class="score-row"><span class="player-name">สมหญิง <span class="player-role">(CMO)</span></span><span class="score-num" style="color:#22c55e">45</span></div>
+      <div class="score-row"><span class="player-name">วิชัย <span class="player-role">(COO)</span></span><span class="score-num" style="color:#f59e0b">30</span></div>
+      <div class="score-row fired"><span class="player-name">พิมพ์ <span class="player-role">(CHRO)</span><span class="fired-tag">ถูกไล่ออก</span></span><span class="score-num" style="color:#666">0</span></div>
+      <div class="score-row fired"><span class="player-name">ธนา <span class="player-role">(CLO)</span><span class="fired-tag">ถูกไล่ออก</span></span><span class="score-num" style="color:#666">0</span></div>
+
+      <div class="company-result">เงินสด: 20 | แบรนด์: 5 | ขวัญกำลังใจ: 5</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -609,6 +609,30 @@ function showRevealed(sit, winningOption, company, player) {
 }
 
 // ── UI: End screen ─────────────────────────────────────────────
+
+const GRADE_ICONS = {
+  A: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
+  B: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M9 12l2 2 4-4"/></svg>',
+  C: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  F: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+};
+
+const GRADE_COLORS = { A: '#22c55e', B: '#4f8ef7', C: '#f59e0b', F: '#f05252' };
+
+const GRADE_DATA = {
+  A: { headline: 'NovaTech รุ่งเรือง!', sub: 'กลุ่มของคุณนำบริษัทผ่านพ้นวิกฤตทั้งหมดได้\nโดยไม่มี KPI บริษัทติดลบแม้แต่ครั้งเดียว' },
+  B: { headline: 'NovaTech รอดหวุดหวิด', sub: 'บริษัทเคยเข้าสู่ภาวะวิกฤตแต่ยังคงประคองตัวมาได้\nคุณรอดตัวจากการถูกไล่ออก' },
+  C: { headline: 'NovaTech ล้มเหลว', sub: 'บริษัทเข้าสู่ภาวะวิกฤตซ้ำแล้วซ้ำเล่า\nแต่คุณยังรอดตัวจากการถูกไล่ออก' },
+  F: { headline: 'คุณถูกไล่ออก', sub: 'คุณไม่สามารถรักษาตำแหน่งของตัวเองไว้ได้\nบริษัทยังคงดำเนินต่อไปโดยไม่มีคุณ' },
+};
+
+function getGrade(isFired, fireCount) {
+  if (isFired) return 'F';
+  if (fireCount === 0) return 'A';
+  if (fireCount <= 2) return 'B';
+  return 'C';
+}
+
 async function showEndScreen(player, company) {
   showState('end');
 
@@ -618,15 +642,21 @@ async function showEndScreen(player, company) {
     .order('kpi_score', { ascending: false });
 
   const firedPlayers = (groupPlayers || []).filter(p => p.kpi_score <= FIRED_THRESHOLD);
-  const survived = firedPlayers.length === 0;
   const fireCount = company?.fire_count ?? 0;
+  const isFired = myKpiScore <= FIRED_THRESHOLD;
+  const grade = getGrade(isFired, fireCount);
+  const gColor = GRADE_COLORS[grade];
+  const gData = GRADE_DATA[grade];
 
-  document.getElementById('end-headline').textContent = survived ? 'NovaTech รอดพ้น!' : 'NovaTech ล้มเหลว';
-  document.getElementById('end-sub').textContent = survived
-    ? 'กลุ่มของคุณผ่านพ้นวิกฤตทั้งหมดได้ ยอดเยี่ยมมาก!'
-    : 'มีผู้บริหารถูกไล่ออก — ทีมไม่สมบูรณ์';
+  if (grade === 'A') showConfetti();
 
-  if (survived) showConfetti();
+  // Grade icon + letter + headline
+  document.getElementById('end-headline').innerHTML = `
+    <div style="width:56px; height:56px; margin:0 auto 12px; color:${gColor}; filter:drop-shadow(0 0 8px ${gColor}40);">${GRADE_ICONS[grade]}</div>
+    <div style="font-size:32px; font-weight:800; color:${gColor}; margin-bottom:4px;">${grade}</div>
+    ${gData.headline}
+  `;
+  document.getElementById('end-sub').textContent = gData.sub;
 
   const container = document.getElementById('final-scores');
   container.innerHTML = '';
@@ -634,16 +664,20 @@ async function showEndScreen(player, company) {
   // Summary stats
   const summary = document.createElement('div');
   summary.style.cssText = 'margin-bottom:16px; padding:12px; border-radius:8px; background:var(--surface2); text-align:left;';
+
+  const fireCountColor = fireCount === 0 ? '#22c55e' : fireCount <= 2 ? '#f59e0b' : '#f05252';
+  const firedCountColor = firedPlayers.length === 0 ? '#22c55e' : '#f05252';
+
   summary.innerHTML = `
     <div style="font-weight:700; font-size:14px; margin-bottom:8px;">สรุปสถานการณ์ของกลุ่ม ${groupNumber}</div>
     <div style="display:flex; flex-direction:column; gap:6px; font-size:13px;">
       <div style="display:flex; justify-content:space-between;">
         <span style="color:var(--text-muted);">KPI บริษัทติดลบ</span>
-        <span style="font-weight:700; color:${fireCount > 0 ? 'var(--danger)' : 'var(--success)'};">${fireCount} ครั้ง</span>
+        <span style="font-weight:700; color:${fireCountColor};">${fireCount} ครั้ง</span>
       </div>
       <div style="display:flex; justify-content:space-between;">
         <span style="color:var(--text-muted);">สมาชิกถูกไล่ออก</span>
-        <span style="font-weight:700; color:${firedPlayers.length > 0 ? 'var(--danger)' : 'var(--success)'};">${firedPlayers.length} คน</span>
+        <span style="font-weight:700; color:${firedCountColor};">${firedPlayers.length} คน</span>
       </div>
     </div>
   `;
@@ -667,7 +701,7 @@ async function showEndScreen(player, company) {
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
         <span style="font-size:13px; font-weight:600; ${fired ? 'text-decoration:line-through; color:var(--text-muted);' : ''}">${p.name}
           <span style="font-size:11px; color:var(--text-muted);">${p.role}</span>
-          ${fired ? '<span style="font-size:10px; font-weight:700; color:var(--danger); margin-left:4px;">FIRED</span>' : ''}
+          ${fired ? '<span style="font-size:10px; font-weight:700; color:#f05252; margin-left:4px;">FIRED</span>' : ''}
         </span>
         <span style="font-size:14px; font-weight:700; color:${kpiColor(p.kpi_score)};">${p.kpi_score}</span>
       </div>

@@ -44,6 +44,7 @@ let groupScores = {};      // group_number -> {cash_flow, brand_trust, employee_
 let groupResults = {};     // group_number -> { situation_index -> winning_option }
 let votes       = [];      // votes for current situation
 let allGroupCards = {};    // group_number -> [{card_type, is_used, ...}]
+let isRevealing = false;   // lock to prevent double-reveal
 
 // ── DOM refs ─────────────────────────────────────────────────
 const jumpSelect       = document.getElementById('jump-select');
@@ -433,8 +434,10 @@ startNextBtn.addEventListener('click', async () => {
 });
 
 revealBtn.addEventListener('click', async () => {
+  if (isRevealing) return;  // prevent double-reveal
   const sitIdx = gameState?.current_situation_index ?? -1;
   if (sitIdx < 0 || sitIdx >= SITUATIONS.length) return;
+  isRevealing = true;
   revealBtn.disabled = true;
 
   await loadVotes(sitIdx);
@@ -462,6 +465,7 @@ revealBtn.addEventListener('click', async () => {
     warnings.push(`เปิดผลไปแล้ว (จะถูกข้าม): ${[...alreadyRevealed].map(g => `กลุ่ม ${g}`).join(', ')}`);
 
   if (warnings.length > 0 && !confirm(`คำเตือน:\n${warnings.join('\n')}\n\nดำเนินการต่อหรือไม่?`)) {
+    isRevealing = false;
     revealBtn.disabled = false;
     return;
   }
@@ -562,6 +566,7 @@ revealBtn.addEventListener('click', async () => {
     showToast(`เปิดผลเรียบร้อย ทั้ง ${groups.length} กลุ่ม!`, 'success');
   }
 
+  isRevealing = false;
   renderGroupTable();
   renderGameOver();
 });
@@ -860,10 +865,15 @@ function subscribeToChanges() {
     .subscribe((status, err) => {
       console.log('[Admin Realtime]', status, err || '');
       if (status === 'SUBSCRIBED') {
-        console.log('[Admin Realtime] ✅ Connected — realtime is working');
+        console.log('[Admin Realtime] Connected');
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        console.error('[Admin Realtime] ❌ Connection failed:', status, err);
-        showToast('Realtime ไม่สามารถเชื่อมต่อได้ — กรุณารีเฟรช', 'error');
+        console.error('[Admin Realtime] Connection failed:', status, err);
+        showToast('การเชื่อมต่อหลุด — กำลังเชื่อมต่อใหม่...', 'error');
+        setTimeout(() => {
+          supabase.removeChannel(supabase.channel('admin-watch'));
+          subscribeToChanges();
+          loadAll().then(() => renderAll());
+        }, 3000);
       }
     });
 }

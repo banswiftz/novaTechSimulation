@@ -192,7 +192,12 @@ function subscribeToChanges() {
         console.log('[Player Realtime] Connected');
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         console.error('[Player Realtime] Connection failed:', status, err);
-        showToast('Realtime ไม่สามารถเชื่อมต่อได้ — กรุณารีเฟรช', 'error');
+        showToast('การเชื่อมต่อหลุด — กำลังเชื่อมต่อใหม่...', 'error');
+        setTimeout(() => {
+          supabase.removeChannel(supabase.channel('player-watch'));
+          subscribeToChanges();
+          init(); // re-fetch latest state
+        }, 3000);
       }
     });
 }

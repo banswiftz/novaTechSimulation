@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <title>NovaTech — หน้าผู้เล่น</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +15,12 @@
   <!-- Loading screen -->
   <div class="loading-screen" id="loading-screen">
     <span class="brand">NovaTech</span>
-    <div class="spinner"></div>
+    <div class="skeleton-group">
+      <div class="skeleton lg w-full"></div>
+      <div class="skeleton md w-3-4"></div>
+      <div class="skeleton md w-full"></div>
+      <div class="skeleton w-half"></div>
+    </div>
     <span class="loading-text">กำลังโหลดข้อมูล...</span>
   </div>
 
@@ -41,7 +47,7 @@
   <div class="container">
 
     <!-- KPI + Company metrics row -->
-    <div style="display:grid; grid-template-columns: 160px 1fr; gap:16px; align-items:start; margin-bottom:20px;">
+    <div class="kpi-metrics-grid">
       <!-- Personal KPI -->
       <div class="card" style="padding:16px;">
         <div class="card-title">คะแนน KPI ของฉัน</div>

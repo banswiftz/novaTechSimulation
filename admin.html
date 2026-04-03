@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <title>NovaTech — หน้าผู้ดำเนินเกม</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +15,12 @@
   <!-- Loading screen -->
   <div class="loading-screen hide" id="loading-screen">
     <span class="brand">NovaTech</span>
-    <div class="spinner"></div>
+    <div class="skeleton-group">
+      <div class="skeleton lg w-full"></div>
+      <div class="skeleton md w-3-4"></div>
+      <div class="skeleton md w-full"></div>
+      <div class="skeleton w-half"></div>
+    </div>
     <span class="loading-text">กำลังโหลดข้อมูล...</span>
   </div>
 
@@ -101,8 +107,14 @@
     <!-- Groups table -->
     <div style="max-width:1600px; margin:0 auto; padding:20px;">
       <div id="no-groups-msg" style="text-align:center; padding:60px 20px; color:var(--text-muted);">
-        <p style="font-size:16px;">ยังไม่มีผู้เล่นเข้าร่วม</p>
-        <p style="font-size:13px; margin-top:8px;">แชร์ลิงก์ให้ผู้เข้าร่วมเพื่อเข้าร่วมกลุ่มของตน</p>
+        <div style="margin-bottom:16px; display:flex; justify-content:center;">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <p style="font-size:16px; font-weight:600;">ยังไม่มีผู้เล่นเข้าร่วม</p>
+        <p style="font-size:13px; margin-top:8px;">แชร์ลิงก์เกมให้ผู้เข้าร่วมเพื่อเข้าร่วมกลุ่มของตน</p>
       </div>
       <div style="overflow-x:auto;">
         <table id="groups-table" class="vote-table" style="display:none; width:100%; min-width:860px; border-collapse:collapse;">

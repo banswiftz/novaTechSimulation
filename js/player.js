@@ -104,6 +104,41 @@ let fireVoteShown   = false;
 let initialized     = false;
 let currentPhase    = 'waiting';
 
+// ── Confetti effect ──────────────────────────────────────────
+function showConfetti() {
+  const container = document.createElement('div');
+  container.className = 'confetti-container';
+  document.body.appendChild(container);
+  const colors = ['#00887A', '#0d9488', '#2563eb', '#7c3aed', '#d97706', '#dc2626', '#a8d9cc', '#f59e0b'];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + '%';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+    piece.style.animationDelay = Math.random() * 1.5 + 's';
+    piece.style.width = (6 + Math.random() * 6) + 'px';
+    piece.style.height = (8 + Math.random() * 8) + 'px';
+    container.appendChild(piece);
+  }
+  setTimeout(() => container.remove(), 5000);
+}
+
+// ── Number animation helper ─────────────────────────────────
+function animateNumber(el, to, duration = 400) {
+  const from = parseInt(el.textContent) || 0;
+  if (from === to) { el.textContent = to; return; }
+  const start = performance.now();
+  const diff = to - from;
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3); // ease-out cubic
+    el.textContent = Math.round(from + diff * ease);
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
 // ── Init ─────────────────────────────────────────────────────
 async function init() {
   const [{ data: player }, { data: company }, { data: gameState }, { data: cards }] = await Promise.all([
@@ -413,10 +448,16 @@ async function applyGameState(gs, company, player) {
 
 // ── UI: Show state ────────────────────────────────────────────
 function showState(name) {
-  stateLobby.style.display    = name === 'lobby'    ? 'block' : 'none';
-  stateVoting.style.display   = name === 'voting'   ? 'block' : 'none';
-  stateRevealed.style.display = name === 'revealed' ? 'block' : 'none';
-  stateEnd.style.display      = name === 'end'      ? 'block' : 'none';
+  const panels = { lobby: stateLobby, voting: stateVoting, revealed: stateRevealed, end: stateEnd };
+  for (const [key, el] of Object.entries(panels)) {
+    if (key === name) {
+      el.style.display = 'block';
+      el.style.animation = 'fadeUp 0.35s cubic-bezier(0.16,1,0.3,1) both';
+    } else {
+      el.style.display = 'none';
+      el.style.animation = '';
+    }
+  }
 }
 
 // ── UI: Voting ────────────────────────────────────────────────
@@ -585,6 +626,8 @@ async function showEndScreen(player, company) {
     ? 'กลุ่มของคุณผ่านพ้นวิกฤตทั้งหมดได้ ยอดเยี่ยมมาก!'
     : 'มีผู้บริหารถูกไล่ออก — ทีมไม่สมบูรณ์';
 
+  if (survived) showConfetti();
+
   const container = document.getElementById('final-scores');
   container.innerHTML = '';
 
@@ -606,22 +649,31 @@ async function showEndScreen(player, company) {
   `;
   container.appendChild(summary);
 
-  // Player scores
+  // Player scores bar chart
   const scoresTitle = document.createElement('div');
   scoresTitle.className = 'card-title';
   scoresTitle.style.marginBottom = '10px';
   scoresTitle.textContent = 'คะแนน KPI สุดท้าย';
   container.appendChild(scoresTitle);
 
+  const maxScore = Math.max(50, ...((groupPlayers || []).map(p => Math.max(p.kpi_score, 0))));
+
   for (const p of (groupPlayers || [])) {
     const fired = p.kpi_score <= FIRED_THRESHOLD;
+    const barWidth = Math.max(0, (p.kpi_score / maxScore) * 100);
     const row = document.createElement('div');
-    row.className = `score-row ${fired ? 'fired' : ''}`;
+    row.style.cssText = 'margin-bottom:10px;';
     row.innerHTML = `
-      <span class="player-name">${p.name} <span style="font-size:12px;color:var(--text-muted);">(${p.role})</span>
-        ${fired ? '<span class="fired-tag">ถูกไล่ออก</span>' : ''}
-      </span>
-      <span class="score-num" style="color:${kpiColor(p.kpi_score)}">${p.kpi_score}</span>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-size:13px; font-weight:600; ${fired ? 'text-decoration:line-through; color:var(--text-muted);' : ''}">${p.name}
+          <span style="font-size:11px; color:var(--text-muted);">${p.role}</span>
+          ${fired ? '<span style="font-size:10px; font-weight:700; color:var(--danger); margin-left:4px;">FIRED</span>' : ''}
+        </span>
+        <span style="font-size:14px; font-weight:700; color:${kpiColor(p.kpi_score)};">${p.kpi_score}</span>
+      </div>
+      <div style="height:8px; background:var(--surface2); border-radius:4px; overflow:hidden;">
+        <div style="height:100%; width:${barWidth}%; background:${fired ? 'var(--text-muted)' : kpiColor(p.kpi_score)}; border-radius:4px; transition:width 0.8s cubic-bezier(0.16,1,0.3,1);"></div>
+      </div>
     `;
     container.appendChild(row);
   }
@@ -638,7 +690,7 @@ function updateKpi(score) {
   const nowFired = score <= FIRED_THRESHOLD;
 
   myKpiScore = score;
-  kpiValue.textContent = score;
+  animateNumber(kpiValue, score);
   const cls = nowFired ? 'dead' : score <= 20 ? 'low' : score <= 35 ? 'medium' : 'high';
   kpiValue.className = `kpi-value ${cls}`;
   firedNotice.style.display = nowFired ? 'block' : 'none';
@@ -670,9 +722,9 @@ function kpiColor(score) {
 // ── Update company metrics ─────────────────────────────────────
 function updateCompany(company) {
   if (!company) return;
-  cashVal.textContent   = company.cash_flow;
-  brandVal.textContent  = company.brand_trust;
-  moraleVal.textContent = company.employee_morale;
+  animateNumber(cashVal, company.cash_flow);
+  animateNumber(brandVal, company.brand_trust);
+  animateNumber(moraleVal, company.employee_morale);
 
   metricCash.classList.toggle('danger',   company.cash_flow <= 25);
   metricBrand.classList.toggle('danger',  company.brand_trust <= 25);

@@ -498,15 +498,15 @@ revealBtn.addEventListener('click', async () => {
       for (const p of groupPlayers) currentKpis[p.role] = p.kpi_score;
       ({ newCompany, newPlayerScores } = applyScores(sitIdx, winner, currentKpis, currentCompany));
 
-      playerUpdates = groupPlayers
-        .filter(p => p.kpi_score > FIRED_THRESHOLD)  // freeze KPI for fired players
-        .map(p =>
-          supabase.from('players').update({ kpi_score: newPlayerScores[p.role] }).eq('id', p.id)
-        );
+      // Apply new scores to local state first (so layoff uses post-situation scores)
+      for (const p of groupPlayers) {
+        if (p.kpi_score > FIRED_THRESHOLD) p.kpi_score = newPlayerScores[p.role];
+      }
     }
 
     // Check if any company KPI went ≤ 0 → reset to +5 and auto-layoff lowest KPI player
     let autoLayoff = false;
+    let layoffPlayerId = null;
     if (newCompany.cash_flow <= GAME_OVER_THRESHOLD ||
         newCompany.brand_trust <= GAME_OVER_THRESHOLD ||
         newCompany.employee_morale <= GAME_OVER_THRESHOLD) {
@@ -516,17 +516,24 @@ revealBtn.addEventListener('click', async () => {
       if (newCompany.brand_trust <= GAME_OVER_THRESHOLD) { reasons.push('ความเชื่อมั่นแบรนด์'); newCompany.brand_trust = 5; }
       if (newCompany.employee_morale <= GAME_OVER_THRESHOLD) { reasons.push('ขวัญกำลังใจ'); newCompany.employee_morale = 5; }
 
-      // Auto-layoff: fire the player with lowest KPI (among alive players)
+      // Auto-layoff: fire the player with lowest KPI (using post-situation scores)
       const alive = groupPlayers.filter(p => p.kpi_score > FIRED_THRESHOLD);
       if (alive.length > 0) {
         const lowest = alive.reduce((a, b) => (a.kpi_score <= b.kpi_score ? a : b));
-        await supabase.from('players').update({ kpi_score: FIRED_THRESHOLD }).eq('id', lowest.id);
         lowest.kpi_score = FIRED_THRESHOLD;
+        layoffPlayerId = lowest.id;
         showToast(`กลุ่ม ${gNum}: ${reasons.join(', ')} ติดลบ → ${lowest.name} (${lowest.role}) ถูก lay off (KPI ต่ำสุด)`, 'error');
       } else {
         showToast(`กลุ่ม ${gNum}: ${reasons.join(', ')} ติดลบ → ไม่มีสมาชิกเหลือให้ lay off`, 'error');
       }
     }
+
+    // Build player DB updates from final local state (already includes layoff)
+    playerUpdates = groupPlayers
+      .filter(p => p.kpi_score > FIRED_THRESHOLD || p.id === layoffPlayerId)
+      .map(p =>
+        supabase.from('players').update({ kpi_score: p.kpi_score }).eq('id', p.id)
+      );
 
     const currentFireCount = (groupScores[gNum]?.fire_count ?? 0);
     const [companyRes, resultRes, ...playerResults] = await Promise.all([
@@ -551,11 +558,6 @@ revealBtn.addEventListener('click', async () => {
       groupScores[gNum] = newCompany;
       if (!groupResults[gNum]) groupResults[gNum] = {};
       groupResults[gNum][sitIdx] = winner;
-      if (newPlayerScores) {
-        for (const p of groupPlayers) {
-          if (p.kpi_score > FIRED_THRESHOLD) p.kpi_score = newPlayerScores[p.role];
-        }
-      }
     }
   }
 

@@ -98,6 +98,18 @@
       <div id="cards-slots" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
     </div>
 
+    <!-- Vote confirmation modal -->
+    <div id="vote-modal" style="display:none; position:fixed; inset:0; background:rgba(30,58,95,0.25); backdrop-filter:blur(6px); z-index:9998; align-items:center; justify-content:center; padding:24px;">
+      <div class="card" style="max-width:400px; width:100%; text-align:center; box-shadow:var(--shadow-overlay); border-radius:var(--radius-xl);">
+        <div style="font-size:16px; font-weight:700; margin-bottom:8px;">ยืนยันการโหวต</div>
+        <p id="vote-modal-text" style="font-size:14px; color:var(--text-muted); margin-bottom:20px; line-height:1.6;"></p>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-ghost" id="vote-modal-cancel" style="flex:1;">เปลี่ยนใจ</button>
+          <button class="btn btn-primary" id="vote-modal-confirm" style="flex:1;">ยืนยัน</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Card activation modal -->
     <div id="card-modal" style="display:none; position:fixed; inset:0; background:rgba(30,58,95,0.25); backdrop-filter:blur(6px); z-index:9998; align-items:center; justify-content:center; padding:24px;">
       <div class="card" style="max-width:400px; width:100%; box-shadow:var(--shadow-overlay); border-radius:var(--radius-xl);">

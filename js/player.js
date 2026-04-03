@@ -507,9 +507,29 @@ function showVoting(sit, alreadyVoted) {
   } else {
     btnA.disabled = false; btnB.disabled = false;
     votedNotice.style.display = 'none';
-    btnA.onclick = () => submitVote('A');
-    btnB.onclick = () => submitVote('B');
+    btnA.onclick = () => confirmVote('A');
+    btnB.onclick = () => confirmVote('B');
   }
+}
+
+const voteModal        = document.getElementById('vote-modal');
+const voteModalText    = document.getElementById('vote-modal-text');
+const voteModalConfirm = document.getElementById('vote-modal-confirm');
+const voteModalCancel  = document.getElementById('vote-modal-cancel');
+
+function confirmVote(choice) {
+  const sit = SITUATIONS[currentSitIdx];
+  const opt = choice === 'A' ? sit.optionA : sit.optionB;
+  voteModalText.textContent = `คุณเลือก ตัวเลือก ${choice}: "${opt.label}" — ยืนยันหรือไม่?`;
+  voteModal.style.display = 'flex';
+
+  voteModalConfirm.onclick = () => {
+    voteModal.style.display = 'none';
+    submitVote(choice);
+  };
+  voteModalCancel.onclick = () => {
+    voteModal.style.display = 'none';
+  };
 }
 
 async function submitVote(choice) {

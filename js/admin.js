@@ -126,10 +126,10 @@ async function loadAll() {
   const missingProvisions = [];
   for (const gNum of groupsToProvision) {
     if (!groupScores[gNum]) {
-      groupScores[gNum] = { cash_flow: 50, brand_trust: 50, employee_morale: 50 };
+      groupScores[gNum] = { cash_flow: 50, brand_trust: 50, employee_morale: 50, pending_fire: false };
       missingProvisions.push(
         supabase.from('group_scores').upsert(
-          { group_number: gNum, cash_flow: 50, brand_trust: 50, employee_morale: 50 },
+          { group_number: gNum, cash_flow: 50, brand_trust: 50, employee_morale: 50, pending_fire: false },
           { onConflict: 'group_number' }
         )
       );
@@ -236,10 +236,10 @@ function buildGroupRow(gNum) {
   const phase  = gameState?.phase ?? 'waiting';
   const gs     = groupScores[gNum] || { cash_flow: 50, brand_trust: 50, employee_morale: 50 };
   const groupPlayers = players.filter(p => p.group_number === gNum);
-  const anyDanger = gs.cash_flow <= GAME_OVER_THRESHOLD || gs.brand_trust <= GAME_OVER_THRESHOLD || gs.employee_morale <= GAME_OVER_THRESHOLD;
+  const pendingFire = gs.pending_fire;
 
   const tr = document.createElement('tr');
-  if (anyDanger) tr.style.background = 'rgba(240,82,82,0.08)';
+  if (pendingFire) tr.style.background = 'rgba(245,158,11,0.12)';
 
   // Situation cells
   const sitCells = SITUATIONS.map(sit => {
@@ -290,7 +290,8 @@ function buildGroupRow(gNum) {
     </td>`;
   }).join('');
 
-  tr.innerHTML = `<td style="font-weight:700; white-space:nowrap; padding-right:8px;">กลุ่ม ${gNum}</td>${sitCells}${metricCells}${roleCells}`;
+  const fireTag = pendingFire ? ' <span style="color:#f59e0b; font-size:11px; font-weight:600;">⚠ รอไล่ออก</span>' : '';
+  tr.innerHTML = `<td style="font-weight:700; white-space:nowrap; padding-right:8px;">กลุ่ม ${gNum}${fireTag}</td>${sitCells}${metricCells}${roleCells}`;
 
   tr.querySelectorAll('.remove-player-btn').forEach(btn => {
     btn.addEventListener('click', () => removePlayer(btn.dataset.id));
@@ -300,15 +301,13 @@ function buildGroupRow(gNum) {
 }
 
 function renderGameOver() {
-  const collapsingGroups = Object.entries(groupScores).filter(([, gs]) =>
-    gs.cash_flow <= GAME_OVER_THRESHOLD ||
-    gs.brand_trust <= GAME_OVER_THRESHOLD ||
-    gs.employee_morale <= GAME_OVER_THRESHOLD
+  const fireVoteGroups = Object.entries(groupScores).filter(([, gs]) =>
+    gs.pending_fire
   ).map(([gNum]) => `กลุ่ม ${gNum}`);
 
-  if (collapsingGroups.length > 0) {
+  if (fireVoteGroups.length > 0) {
     adminGameOver.classList.add('show');
-    adminGoReason.textContent = `ล้มละลาย: ${collapsingGroups.join(', ')}`;
+    adminGoReason.textContent = `รอโหวตไล่ออก: ${fireVoteGroups.join(', ')}`;
   } else {
     adminGameOver.classList.remove('show');
   }
@@ -434,12 +433,26 @@ revealBtn.addEventListener('click', async () => {
         );
     }
 
+    // Check if any company KPI went ≤ 0 → reset to +5 and trigger fire vote
+    let needsFireVote = false;
+    if (newCompany.cash_flow <= GAME_OVER_THRESHOLD ||
+        newCompany.brand_trust <= GAME_OVER_THRESHOLD ||
+        newCompany.employee_morale <= GAME_OVER_THRESHOLD) {
+      needsFireVote = true;
+      const reasons = [];
+      if (newCompany.cash_flow <= GAME_OVER_THRESHOLD) { reasons.push('กระแสเงินสด'); newCompany.cash_flow = 5; }
+      if (newCompany.brand_trust <= GAME_OVER_THRESHOLD) { reasons.push('ความเชื่อมั่นแบรนด์'); newCompany.brand_trust = 5; }
+      if (newCompany.employee_morale <= GAME_OVER_THRESHOLD) { reasons.push('ขวัญกำลังใจ'); newCompany.employee_morale = 5; }
+      showToast(`กลุ่ม ${gNum}: ${reasons.join(', ')} ติดลบ → รีเซ็ตเป็น 5 — ต้องไล่ออก 1 คน`, 'error');
+    }
+
     const [companyRes, resultRes, ...playerResults] = await Promise.all([
       supabase.from('group_scores').upsert({
         group_number:    gNum,
         cash_flow:       newCompany.cash_flow,
         brand_trust:     newCompany.brand_trust,
         employee_morale: newCompany.employee_morale,
+        pending_fire:    needsFireVote,
       }, { onConflict: 'group_number' }),
       supabase.from('group_results').upsert({
         group_number:    gNum,
@@ -590,12 +603,13 @@ backBtn.addEventListener('click', async () => {
         const opt = result === 'A' ? sit.optionA : sit.optionB;
         const gs = groupScores[gNum];
 
-        // Reverse company scores
+        // Reverse company scores + clear pending_fire
         await supabase.from('group_scores').upsert({
           group_number:    gNum,
           cash_flow:       (gs.cash_flow ?? 50)       - (opt.company.cash_flow ?? 0),
           brand_trust:     (gs.brand_trust ?? 50)     - (opt.company.brand_trust ?? 0),
           employee_morale: (gs.employee_morale ?? 50) - (opt.company.employee_morale ?? 0),
+          pending_fire:    false,
         }, { onConflict: 'group_number' });
 
         // Reverse player KPIs
@@ -609,6 +623,7 @@ backBtn.addEventListener('click', async () => {
         gs.cash_flow       -= (opt.company.cash_flow ?? 0);
         gs.brand_trust     -= (opt.company.brand_trust ?? 0);
         gs.employee_morale -= (opt.company.employee_morale ?? 0);
+        gs.pending_fire     = false;
       } else {
         // Reverse X penalty (+10 each)
         const gs = groupScores[gNum];
@@ -617,6 +632,7 @@ backBtn.addEventListener('click', async () => {
           cash_flow:       gs.cash_flow + 10,
           brand_trust:     gs.brand_trust + 10,
           employee_morale: gs.employee_morale + 10,
+          pending_fire:    false,
         }, { onConflict: 'group_number' });
         gs.cash_flow += 10;
         gs.brand_trust += 10;
@@ -660,6 +676,7 @@ backBtn.addEventListener('click', async () => {
             cash_flow:       (gs.cash_flow ?? 50)       - (opt.company.cash_flow ?? 0),
             brand_trust:     (gs.brand_trust ?? 50)     - (opt.company.brand_trust ?? 0),
             employee_morale: (gs.employee_morale ?? 50) - (opt.company.employee_morale ?? 0),
+            pending_fire:    false,
           }, { onConflict: 'group_number' });
 
           for (const p of groupPlayers) {
@@ -671,6 +688,7 @@ backBtn.addEventListener('click', async () => {
           gs.cash_flow       -= (opt.company.cash_flow ?? 0);
           gs.brand_trust     -= (opt.company.brand_trust ?? 0);
           gs.employee_morale -= (opt.company.employee_morale ?? 0);
+          gs.pending_fire     = false;
         } else {
           const gs = groupScores[gNum];
           await supabase.from('group_scores').upsert({
@@ -678,6 +696,7 @@ backBtn.addEventListener('click', async () => {
             cash_flow:       gs.cash_flow + 10,
             brand_trust:     gs.brand_trust + 10,
             employee_morale: gs.employee_morale + 10,
+            pending_fire:    false,
           }, { onConflict: 'group_number' });
           gs.cash_flow += 10;
           gs.brand_trust += 10;

@@ -39,6 +39,7 @@ CREATE TABLE public.group_scores (
   cash_flow integer DEFAULT 50,
   brand_trust integer DEFAULT 50,
   employee_morale integer DEFAULT 50,
+  pending_fire boolean DEFAULT false,
   CONSTRAINT group_scores_pkey PRIMARY KEY (group_number)
 );
 

@@ -190,6 +190,27 @@
     </div>
   </div>
 
+  <!-- Fire vote popup (voter only) -->
+  <div id="fire-vote-popup" style="display:none; position:fixed; inset:0; background:rgba(15,17,23,.95); z-index:9999; align-items:center; justify-content:center; padding:24px;">
+    <div class="card" style="max-width:420px; width:100%; text-align:center;">
+      <div style="font-size:48px; margin-bottom:12px;">⚠️</div>
+      <div style="font-size:20px; font-weight:700; color:#f59e0b; margin-bottom:8px;">KPI บริษัทติดลบ!</div>
+      <p style="font-size:14px; color:#8892a4; margin-bottom:16px; line-height:1.6;">ดัชนีชี้วัดบริษัทตกต่ำกว่า 0 — กลุ่มต้องไล่ออกสมาชิก 1 คน<br>KPI ที่ติดลบถูกรีเซ็ตเป็น 5 แล้ว</p>
+      <div id="fire-vote-list" style="margin-bottom:16px;"></div>
+      <button class="btn btn-primary" id="fire-vote-confirm" disabled style="width:100%; background:#f05252;">ยืนยันไล่ออก</button>
+    </div>
+  </div>
+
+  <!-- Fire vote waiting popup (non-voter) -->
+  <div id="fire-vote-waiting" style="display:none; position:fixed; inset:0; background:rgba(15,17,23,.95); z-index:9999; align-items:center; justify-content:center; padding:24px;">
+    <div class="card" style="max-width:420px; width:100%; text-align:center;">
+      <div style="font-size:48px; margin-bottom:12px;">⚠️</div>
+      <div style="font-size:20px; font-weight:700; color:#f59e0b; margin-bottom:8px;">KPI บริษัทติดลบ!</div>
+      <p style="font-size:14px; color:#8892a4; margin-bottom:16px; line-height:1.6;">ดัชนีชี้วัดบริษัทตกต่ำกว่า 0 — กลุ่มต้องไล่ออกสมาชิก 1 คน<br>รอผู้โหวตเลือก...</p>
+      <div class="spinner"></div>
+    </div>
+  </div>
+
   <div id="toast-container"></div>
   <script type="module" src="js/player.js"></script>
 </body>

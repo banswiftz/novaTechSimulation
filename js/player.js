@@ -87,6 +87,12 @@ firedPopupClose.addEventListener('click', () => {
   firedPopup.style.display = 'none';
 });
 
+// Fire vote popup DOM
+const fireVotePopup   = document.getElementById('fire-vote-popup');
+const fireVoteList    = document.getElementById('fire-vote-list');
+const fireVoteConfirm = document.getElementById('fire-vote-confirm');
+const fireVoteWaiting = document.getElementById('fire-vote-waiting');
+
 // ── Local state ──────────────────────────────────────────────
 let currentSitIdx   = -1;
 let myVote          = null;
@@ -94,6 +100,7 @@ let lastRevealedIdx = -1;
 let myKpiScore      = 50;
 let groupCards      = [];  // [{card_type, is_used, used_at_situation, card_metadata}]
 let firedPopupShown = false;
+let fireVoteShown   = false;
 let initialized     = false;
 
 // ── Init ─────────────────────────────────────────────────────
@@ -112,6 +119,7 @@ async function init() {
   if (gameState) await applyGameState(gameState, company, player);
 
   initialized = true;
+  if (company) checkFireVote(company);
   subscribeToChanges();
 }
 
@@ -638,19 +646,11 @@ function updateCompany(company) {
   brandVal.style.color  = valColor(company.brand_trust);
   moraleVal.style.color = valColor(company.employee_morale);
 
-  const gameOver = company.cash_flow <= GAME_OVER_THRESHOLD ||
-                   company.brand_trust <= GAME_OVER_THRESHOLD ||
-                   company.employee_morale <= GAME_OVER_THRESHOLD;
-  if (gameOver) {
-    gameOverBanner.classList.add('show');
-    const reasons = [];
-    if (company.cash_flow <= GAME_OVER_THRESHOLD)       reasons.push('กระแสเงินสด');
-    if (company.brand_trust <= GAME_OVER_THRESHOLD)     reasons.push('ความเชื่อมั่นแบรนด์');
-    if (company.employee_morale <= GAME_OVER_THRESHOLD) reasons.push('ขวัญกำลังใจ');
-    gameOverReason.textContent = `ดัชนีชี้วัดวิกฤตต่ำกว่า ${GAME_OVER_THRESHOLD}: ${reasons.join(', ')}`;
-  } else {
-    gameOverBanner.classList.remove('show');
-  }
+  // Game over banner is no longer needed — negative KPIs now trigger fire vote instead
+  gameOverBanner.classList.remove('show');
+
+  // Check fire vote
+  if (initialized) checkFireVote(company);
 }
 
 function valColor(v) {
@@ -677,6 +677,78 @@ function showToast(msg, type = '') {
   toast.textContent = msg;
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
+}
+
+// ── Fire vote logic ──────────────────────────────────────────
+async function checkFireVote(company) {
+  if (!company || !company.pending_fire) {
+    // Hide popups if fire resolved
+    fireVotePopup.style.display = 'none';
+    fireVoteWaiting.style.display = 'none';
+    fireVoteShown = false;
+    return;
+  }
+
+  if (fireVoteShown) return;
+  fireVoteShown = true;
+
+  if (!isVoter) {
+    // Non-voter: show waiting popup
+    fireVoteWaiting.style.display = 'flex';
+    return;
+  }
+
+  // Voter: show fire vote popup with list of eligible members
+  const { data: groupPlayers } = await supabase
+    .from('players').select('*')
+    .eq('group_number', groupNumber)
+    .order('created_at');
+
+  const eligible = (groupPlayers || []).filter(p => p.kpi_score > FIRED_THRESHOLD);
+
+  fireVoteList.innerHTML = '';
+  let selectedId = null;
+
+  for (const p of eligible) {
+    const label = document.createElement('label');
+    label.style.cssText = 'display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; border-radius:8px; margin-bottom:6px; background:var(--surface2); transition:background 0.15s;';
+    label.innerHTML = `
+      <input type="radio" name="fire-target" value="${p.id}" style="accent-color:#f05252;" />
+      <span style="font-weight:600; font-size:14px;">${p.name}</span>
+      <span style="font-size:12px; color:#8892a4;">(${p.role})</span>
+      <span style="margin-left:auto; font-size:13px; font-weight:700; color:${kpiColor(p.kpi_score)};">${p.kpi_score}</span>
+    `;
+    const radio = label.querySelector('input');
+    radio.addEventListener('change', () => {
+      selectedId = p.id;
+      fireVoteConfirm.disabled = false;
+      // Highlight selected
+      fireVoteList.querySelectorAll('label').forEach(l => l.style.background = 'var(--surface2)');
+      label.style.background = 'rgba(240,82,82,0.15)';
+    });
+    fireVoteList.appendChild(label);
+  }
+
+  fireVoteConfirm.disabled = true;
+  fireVoteConfirm.onclick = async () => {
+    if (!selectedId) return;
+    const target = eligible.find(p => p.id === selectedId);
+    if (!target) return;
+    if (!confirm(`ยืนยันไล่ ${target.name} (${target.role}) ออก?`)) return;
+
+    fireVoteConfirm.disabled = true;
+
+    // Set player's KPI to 0 (fired)
+    await supabase.from('players').update({ kpi_score: FIRED_THRESHOLD }).eq('id', selectedId);
+
+    // Clear pending_fire
+    await supabase.from('group_scores').update({ pending_fire: false }).eq('group_number', groupNumber);
+
+    fireVotePopup.style.display = 'none';
+    showToast(`${target.name} (${target.role}) ถูกไล่ออกจากบริษัท`, 'error');
+  };
+
+  fireVotePopup.style.display = 'flex';
 }
 
 init();

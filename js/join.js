@@ -256,10 +256,10 @@ function showWaitingScreen(player, group, isVoter, cardTypes) {
 
 function renderSelectedCards(cardTypes) {
   if (!cardTypes || cardTypes.length === 0) {
-    selectedCardsDisplay.innerHTML = '<p style="font-size:12px; color:#7A9A95;">ยังไม่ได้เลือกการ์ดพิเศษ</p>';
+    selectedCardsDisplay.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">ยังไม่ได้เลือกการ์ดพิเศษ</p>';
     return;
   }
-  selectedCardsDisplay.innerHTML = '<p style="font-size:12px; color:#7A9A95; margin-bottom:8px;">การ์ดพิเศษของกลุ่ม:</p>' +
+  selectedCardsDisplay.innerHTML = '<p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">การ์ดพิเศษของกลุ่ม:</p>' +
     cardTypes.map(ct => {
       const card = SPECIAL_CARDS[ct];
       return card ? `<span class="card-badge">${card.icon} ${card.nameTh}</span>` : '';

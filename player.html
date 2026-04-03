@@ -4,16 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NovaTech — หน้าผู้เล่น</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
   <!-- Removed/Reset overlay -->
-  <div id="removed-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center; text-align:center; padding:24px;">
+  <div id="removed-overlay" style="display:none; position:fixed; inset:0; background:rgba(30,58,95,0.25); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; text-align:center; padding:24px;">
     <div>
-      <div style="font-size:40px; margin-bottom:16px;">👋</div>
+      <div class="modal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg></div>
       <h2 id="removed-headline" style="font-size:22px; font-weight:700; margin-bottom:8px;">คุณถูกนำออกจากเกม</h2>
-      <p id="removed-sub" style="color:#7A9A95; margin-bottom:24px;">ผู้ดำเนินเกมได้นำคุณออกจากเกมแล้ว</p>
+      <p id="removed-sub" style="color:var(--text-muted); margin-bottom:24px;">ผู้ดำเนินเกมได้นำคุณออกจากเกมแล้ว</p>
       <a href="index.html" class="btn btn-primary">เข้าร่วมเกมใหม่</a>
     </div>
   </div>
@@ -50,16 +53,19 @@
         <div class="metrics-row">
           <div class="metric-card" id="metric-cash">
             <div class="danger-badge">!</div>
+            <div class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
             <div class="metric-val" id="cash-val">50</div>
             <div class="metric-name">กระแสเงินสด</div>
           </div>
           <div class="metric-card" id="metric-brand">
             <div class="danger-badge">!</div>
+            <div class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
             <div class="metric-val" id="brand-val">50</div>
             <div class="metric-name">ความเชื่อมั่นแบรนด์</div>
           </div>
           <div class="metric-card" id="metric-morale">
             <div class="danger-badge">!</div>
+            <div class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
             <div class="metric-val" id="morale-val">50</div>
             <div class="metric-name">ขวัญกำลังใจ</div>
           </div>
@@ -80,10 +86,10 @@
     </div>
 
     <!-- Card activation modal -->
-    <div id="card-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:9998; align-items:center; justify-content:center; padding:24px;">
-      <div class="card" style="max-width:400px; width:100%;">
+    <div id="card-modal" style="display:none; position:fixed; inset:0; background:rgba(30,58,95,0.25); backdrop-filter:blur(6px); z-index:9998; align-items:center; justify-content:center; padding:24px;">
+      <div class="card" style="max-width:400px; width:100%; box-shadow:var(--shadow-overlay); border-radius:var(--radius-xl);">
         <div id="card-modal-title" style="font-size:16px; font-weight:700; margin-bottom:8px;"></div>
-        <div id="card-modal-desc" style="font-size:13px; color:#7A9A95; margin-bottom:16px;"></div>
+        <div id="card-modal-desc" style="font-size:13px; color:var(--text-muted); margin-bottom:16px;"></div>
         <div id="card-modal-body"></div>
         <div style="display:flex; gap:8px; margin-top:16px;">
           <button class="btn btn-primary" id="card-modal-confirm" style="flex:1;">ยืนยัน</button>
@@ -122,7 +128,7 @@
           </button>
         </div>
 
-        <div id="voted-notice" style="display:none; margin-top:16px; color:#7A9A95; font-size:14px;">
+        <div id="voted-notice" style="display:none; margin-top:16px; color:var(--text-muted); font-size:14px;">
           ส่งโหวตแล้ว รอผลจากสมาชิกคนอื่น...
         </div>
       </div>
@@ -146,11 +152,11 @@
         <div id="outcome-section">
           <div class="card-title">การเปลี่ยนแปลงคะแนน</div>
           <div style="margin-bottom:12px;">
-            <div style="font-size:13px; color:#7A9A95; margin-bottom:6px;">KPI ของฉัน</div>
+            <div style="font-size:13px; color:var(--text-muted); margin-bottom:6px;">KPI ของฉัน</div>
             <div id="my-delta" class="delta-chips"></div>
           </div>
           <div>
-            <div style="font-size:13px; color:#7A9A95; margin-bottom:6px;">ดัชนีบริษัท</div>
+            <div style="font-size:13px; color:var(--text-muted); margin-bottom:6px;">ดัชนีบริษัท</div>
             <div id="company-deltas" class="delta-chips"></div>
           </div>
         </div>
@@ -181,32 +187,32 @@
   </div>
 
   <!-- Fired popup -->
-  <div id="fired-popup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.42); z-index:9998; align-items:center; justify-content:center; padding:24px;">
-    <div class="card" style="max-width:420px; width:100%; text-align:center;">
-      <div style="font-size:48px; margin-bottom:12px;">🚫</div>
-      <div style="font-size:20px; font-weight:700; color:#e04848; margin-bottom:8px;">คุณถูกไล่ออก</div>
-      <p id="fired-popup-msg" style="font-size:14px; color:#7A9A95; margin-bottom:20px; line-height:1.6;"></p>
+  <div id="fired-popup" style="display:none; position:fixed; inset:0; background:rgba(30,58,95,0.25); backdrop-filter:blur(6px); z-index:9998; align-items:center; justify-content:center; padding:24px;">
+    <div class="card" style="max-width:420px; width:100%; text-align:center; box-shadow:var(--shadow-overlay); border-radius:var(--radius-xl);">
+      <div class="modal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
+      <div style="font-size:20px; font-weight:700; color:var(--danger); margin-bottom:8px;">คุณถูกไล่ออก</div>
+      <p id="fired-popup-msg" style="font-size:14px; color:var(--text-muted); margin-bottom:20px; line-height:1.6;"></p>
       <button class="btn btn-primary" id="fired-popup-close">รับทราบ</button>
     </div>
   </div>
 
   <!-- Fire vote popup (voter only) -->
-  <div id="fire-vote-popup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center; padding:24px;">
-    <div class="card" style="max-width:420px; width:100%; text-align:center;">
-      <div style="font-size:48px; margin-bottom:12px;">⚠️</div>
-      <div style="font-size:20px; font-weight:700; color:#e08a00; margin-bottom:8px;">KPI บริษัทติดลบ!</div>
-      <p style="font-size:14px; color:#7A9A95; margin-bottom:16px; line-height:1.6;">ดัชนีชี้วัดบริษัทตกต่ำกว่า 0 — กลุ่มต้องไล่ออกสมาชิก 1 คน<br>KPI ที่ติดลบถูกรีเซ็ตเป็น 5 แล้ว</p>
+  <div id="fire-vote-popup" style="display:none; position:fixed; inset:0; background:rgba(30,58,95,0.25); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:24px;">
+    <div class="card" style="max-width:420px; width:100%; text-align:center; box-shadow:var(--shadow-overlay); border-radius:var(--radius-xl);">
+      <div class="modal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+      <div style="font-size:20px; font-weight:700; color:var(--warn); margin-bottom:8px;">KPI บริษัทติดลบ!</div>
+      <p style="font-size:14px; color:var(--text-muted); margin-bottom:16px; line-height:1.6;">ดัชนีชี้วัดบริษัทตกต่ำกว่า 0 — กลุ่มต้องไล่ออกสมาชิก 1 คน<br>KPI ที่ติดลบถูกรีเซ็ตเป็น 5 แล้ว</p>
       <div id="fire-vote-list" style="margin-bottom:16px;"></div>
-      <button class="btn btn-primary" id="fire-vote-confirm" disabled style="width:100%; background:#e04848;">ยืนยันไล่ออก</button>
+      <button class="btn btn-danger" id="fire-vote-confirm" disabled style="width:100%;">ยืนยันไล่ออก</button>
     </div>
   </div>
 
   <!-- Fire vote waiting popup (non-voter) -->
-  <div id="fire-vote-waiting" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center; padding:24px;">
-    <div class="card" style="max-width:420px; width:100%; text-align:center;">
-      <div style="font-size:48px; margin-bottom:12px;">⚠️</div>
-      <div style="font-size:20px; font-weight:700; color:#e08a00; margin-bottom:8px;">KPI บริษัทติดลบ!</div>
-      <p style="font-size:14px; color:#7A9A95; margin-bottom:16px; line-height:1.6;">ดัชนีชี้วัดบริษัทตกต่ำกว่า 0 — กลุ่มต้องไล่ออกสมาชิก 1 คน<br>รอผู้โหวตเลือก...</p>
+  <div id="fire-vote-waiting" style="display:none; position:fixed; inset:0; background:rgba(30,58,95,0.25); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:24px;">
+    <div class="card" style="max-width:420px; width:100%; text-align:center; box-shadow:var(--shadow-overlay); border-radius:var(--radius-xl);">
+      <div class="modal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+      <div style="font-size:20px; font-weight:700; color:var(--warn); margin-bottom:8px;">KPI บริษัทติดลบ!</div>
+      <p style="font-size:14px; color:var(--text-muted); margin-bottom:16px; line-height:1.6;">ดัชนีชี้วัดบริษัทตกต่ำกว่า 0 — กลุ่มต้องไล่ออกสมาชิก 1 คน<br>รอผู้โหวตเลือก...</p>
       <div class="spinner"></div>
     </div>
   </div>

@@ -250,7 +250,7 @@ export const SPECIAL_CARDS = {
     name: 'Consulting Firm Report',
     nameTh: 'Consulting Firm Report',
     description: 'เปิดเผยผลกระทบ KPI บริษัทของทั้งตัวเลือก A และ B ให้ทั้งกลุ่มเห็น',
-    icon: '📊',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
     useDuring: 'voting',
   },
   global_pr: {
@@ -258,7 +258,7 @@ export const SPECIAL_CARDS = {
     name: 'Global PR Blitz',
     nameTh: 'Global PR Blitz',
     description: 'เลือก KPI บริษัท 1 ตัว แล้วเพิ่ม +20 ทันที',
-    icon: '📢',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
     useDuring: 'anytime',
     requiresTarget: 'company_kpi',
   },

@@ -256,17 +256,17 @@ function buildGroupRow(gNum) {
     const si  = sit.index;
     const res = groupResults[gNum]?.[si];
     if (res !== undefined) {
-      const color = res === 'A' ? '#2563eb' : res === 'B' ? '#e08a00' : '#e04848';
+      const color = res === 'A' ? 'var(--CFO)' : res === 'B' ? 'var(--warn)' : 'var(--danger)';
       return `<td style="text-align:center;"><span style="font-weight:700; color:${color};">${res}</span></td>`;
     }
     if (si === sitIdx && phase === 'voting') {
       const voter     = groupPlayers.find(p => p.is_voter);
       const voterVote = voter ? votes.find(v => v.player_id === voter.id) : null;
       if (voterVote) {
-        const color = voterVote.choice === 'A' ? '#2563eb' : '#e08a00';
+        const color = voterVote.choice === 'A' ? 'var(--CFO)' : 'var(--warn)';
         return `<td style="text-align:center;"><span style="font-weight:700; color:${color};">${voterVote.choice}</span></td>`;
       }
-      return `<td style="text-align:center; color:#7A9A95; font-size:18px; line-height:1;">?</td>`;
+      return `<td style="text-align:center; color:var(--text-muted); font-size:18px; line-height:1;">?</td>`;
     }
     return `<td></td>`;
   }).join('');
@@ -296,20 +296,20 @@ function buildGroupRow(gNum) {
         ${fired ? 'text-decoration:line-through;' : ''}
         background:transparent; border:1px solid transparent; border-radius:4px; padding:2px;
         font-size:13px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='transparent'" />
-      <button class="remove-player-btn" data-id="${p.id}" style="background:none;border:none;cursor:pointer;color:#e04848;font-size:10px;padding:0 0 0 2px;opacity:0.5;" title="นำ ${p.name} ออก">✕</button>
-      <div style="font-size:10px; color:#7A9A95; margin-top:1px; opacity:0.7;">${p.name}${voterMark}</div>
+      <button class="remove-player-btn" data-id="${p.id}" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:10px;padding:0 0 0 2px;opacity:0.5;" title="นำ ${p.name} ออก">✕</button>
+      <div style="font-size:10px; color:var(--text-muted); margin-top:1px; opacity:0.7;">${p.name}${voterMark}</div>
     </td>`;
   }).join('');
 
-  const fireTag = pendingFire ? ' <span style="color:#e08a00; font-size:11px; font-weight:600;">⚠ รอไล่ออก</span>' : '';
+  const fireTag = pendingFire ? ' <span style="color:var(--warn); font-size:11px; font-weight:600;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> รอไล่ออก</span>' : '';
 
   // Cards display
   const cards = allGroupCards[gNum] || [];
   const cardTags = cards.map(c => {
     const card = SPECIAL_CARDS[c.card_type];
     if (!card) return '';
-    const status = c.is_used ? '✅' : '';
-    return `<span title="${card.nameTh}${c.is_used ? ' (ใช้แล้ว)' : ''}" style="font-size:12px; opacity:${c.is_used ? '0.5' : '1'};">${card.icon}${status}</span>`;
+    const status = c.is_used ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '';
+    return `<span title="${card.nameTh}${c.is_used ? ' (ใช้แล้ว)' : ''}" style="display:inline-flex; align-items:center; gap:1px; opacity:${c.is_used ? '0.45' : '1'};"><span style="display:inline-flex; width:14px; height:14px;">${card.icon}</span>${status}</span>`;
   }).join(' ');
   const cardDisplay = cardTags ? ` <span style="margin-left:4px;">${cardTags}</span>` : '';
 
@@ -897,15 +897,15 @@ function subscribeToChanges() {
 
 // ── Helpers ───────────────────────────────────────────────────
 function scoreColor(v) {
-  if (v <= FIRED_THRESHOLD) return '#aaa';
-  if (v <= 20) return '#e04848';
-  if (v <= 35) return '#e08a00';
-  return '#1a9a4a';
+  if (v <= FIRED_THRESHOLD) return 'var(--text-muted)';
+  if (v <= 20) return 'var(--danger)';
+  if (v <= 35) return 'var(--warn)';
+  return 'var(--success)';
 }
 function metricColor(v) {
-  if (v <= GAME_OVER_THRESHOLD) return '#e04848';
-  if (v <= 25) return '#e08a00';
-  return '#1E3A5F';
+  if (v <= GAME_OVER_THRESHOLD) return 'var(--danger)';
+  if (v <= 25) return 'var(--warn)';
+  return 'var(--text)';
 }
 function showToast(msg, type = '') {
   const container = document.getElementById('toast-container');

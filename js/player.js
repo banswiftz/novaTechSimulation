@@ -255,14 +255,14 @@ function activateConsultingReport() {
   const sit = SITUATIONS[currentSitIdx];
   if (!sit) return;
 
-  cardModalTitle.textContent = '📊 Consulting Firm Report';
+  cardModalTitle.textContent = 'Consulting Firm Report';
   cardModalDesc.textContent = 'ยืนยันเปิดเผยผลกระทบ KPI บริษัทของทั้ง 2 ตัวเลือกให้ทั้งกลุ่มเห็น?';
-  cardModalBody.innerHTML = '<p style="color:#00887A; font-size:13px;">ข้อมูลจะแสดงบนหน้าโหวตของทุกคนในกลุ่ม</p>';
+  cardModalBody.innerHTML = '<p style="color:var(--primary); font-size:13px;">ข้อมูลจะแสดงบนหน้าโหวตของทุกคนในกลุ่ม</p>';
 
   showCardModal(async () => {
     await markCardUsed('consulting_report');
     showConsultingDeltas(); // Show immediately for voter
-    showToast('📊 เปิดเผยข้อมูลจากที่ปรึกษาแล้ว — ทุกคนในกลุ่มเห็น', 'success');
+    showToast('เปิดเผยข้อมูลจากที่ปรึกษาแล้ว — ทุกคนในกลุ่มเห็น', 'success');
   });
 }
 
@@ -277,7 +277,7 @@ function showConsultingDeltas() {
   if (!deltasA || !deltasB) return;
 
   for (const [el, opt] of [[deltasA, sit.optionA], [deltasB, sit.optionB]]) {
-    el.innerHTML = '<div style="font-size:11px; color:#00887A; font-weight:700; margin-bottom:4px;">📊 ผลกระทบบริษัท:</div>';
+    el.innerHTML = '<div style="font-size:11px; color:var(--primary); font-weight:700; margin-bottom:4px;">ผลกระทบบริษัท:</div>';
     for (const [key, name] of Object.entries(labels)) {
       const val = opt.company[key] ?? 0;
       const cls = val > 0 ? 'pos' : val < 0 ? 'neg' : 'neu';
@@ -296,7 +296,7 @@ function clearConsultingDeltas() {
 
 // -- Global PR Blitz --
 function activateGlobalPR() {
-  cardModalTitle.textContent = '📢 Global PR Blitz';
+  cardModalTitle.textContent = 'Global PR Blitz';
   cardModalDesc.textContent = 'เลือก KPI บริษัท 1 ตัวเพื่อเพิ่ม +20 ทันที:';
 
   const options = [
@@ -326,7 +326,7 @@ function activateGlobalPR() {
     await markCardUsed('global_pr', { target_kpi: targetKpi });
 
     const label = options.find(o => o.key === targetKpi)?.label || targetKpi;
-    showToast(`📢 ${label} +20 เรียบร้อย!`, 'success');
+    showToast(`${label} +20 เรียบร้อย!`, 'success');
   });
 }
 
@@ -591,12 +591,12 @@ async function showEndScreen(player, company) {
     <div style="font-weight:700; font-size:14px; margin-bottom:8px;">สรุปสถานการณ์ของกลุ่ม ${groupNumber}</div>
     <div style="display:flex; flex-direction:column; gap:6px; font-size:13px;">
       <div style="display:flex; justify-content:space-between;">
-        <span style="color:#7A9A95;">KPI บริษัทติดลบ</span>
-        <span style="font-weight:700; color:${fireCount > 0 ? '#e04848' : '#22c55e'};">${fireCount} ครั้ง</span>
+        <span style="color:var(--text-muted);">KPI บริษัทติดลบ</span>
+        <span style="font-weight:700; color:${fireCount > 0 ? 'var(--danger)' : 'var(--success)'};">${fireCount} ครั้ง</span>
       </div>
       <div style="display:flex; justify-content:space-between;">
-        <span style="color:#7A9A95;">สมาชิกถูกไล่ออก</span>
-        <span style="font-weight:700; color:${firedPlayers.length > 0 ? '#e04848' : '#22c55e'};">${firedPlayers.length} คน</span>
+        <span style="color:var(--text-muted);">สมาชิกถูกไล่ออก</span>
+        <span style="font-weight:700; color:${firedPlayers.length > 0 ? 'var(--danger)' : 'var(--success)'};">${firedPlayers.length} คน</span>
       </div>
     </div>
   `;
@@ -614,7 +614,7 @@ async function showEndScreen(player, company) {
     const row = document.createElement('div');
     row.className = `score-row ${fired ? 'fired' : ''}`;
     row.innerHTML = `
-      <span class="player-name">${p.name} <span style="font-size:12px;color:#7A9A95;">(${p.role})</span>
+      <span class="player-name">${p.name} <span style="font-size:12px;color:var(--text-muted);">(${p.role})</span>
         ${fired ? '<span class="fired-tag">ถูกไล่ออก</span>' : ''}
       </span>
       <span class="score-num" style="color:${kpiColor(p.kpi_score)}">${p.kpi_score}</span>
@@ -657,10 +657,10 @@ function updateKpi(score) {
 }
 
 function kpiColor(score) {
-  if (score <= FIRED_THRESHOLD) return '#666';
-  if (score <= 20) return '#e04848';
-  if (score <= 35) return '#e08a00';
-  return '#22c55e';
+  if (score <= FIRED_THRESHOLD) return 'var(--text-muted)';
+  if (score <= 20) return 'var(--danger)';
+  if (score <= 35) return 'var(--warn)';
+  return 'var(--success)';
 }
 
 // ── Update company metrics ─────────────────────────────────────
@@ -686,9 +686,9 @@ function updateCompany(company) {
 }
 
 function valColor(v) {
-  if (v <= GAME_OVER_THRESHOLD) return '#e04848';
-  if (v <= 25) return '#e08a00';
-  return '#1E3A5F';
+  if (v <= GAME_OVER_THRESHOLD) return 'var(--danger)';
+  if (v <= 25) return 'var(--warn)';
+  return 'var(--text)';
 }
 
 // ── Progress steps ────────────────────────────────────────────
@@ -753,9 +753,9 @@ async function checkFireVote(company) {
     const label = document.createElement('label');
     label.style.cssText = 'display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; border-radius:8px; margin-bottom:6px; background:var(--surface2); transition:background 0.15s;';
     label.innerHTML = `
-      <input type="radio" name="fire-target" value="${p.id}" style="accent-color:#e04848;" />
+      <input type="radio" name="fire-target" value="${p.id}" style="accent-color:var(--danger);" />
       <span style="font-weight:600; font-size:14px;">${p.name}</span>
-      <span style="font-size:12px; color:#7A9A95;">(${p.role})</span>
+      <span style="font-size:12px; color:var(--text-muted);">(${p.role})</span>
       <span style="margin-left:auto; font-size:13px; font-weight:700; color:${kpiColor(p.kpi_score)};">${p.kpi_score}</span>
     `;
     const radio = label.querySelector('input');

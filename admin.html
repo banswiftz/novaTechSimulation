@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NovaTech — หน้าผู้ดำเนินเกม</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -16,7 +19,7 @@
       <div class="form-group">
         <input class="form-input" type="password" id="admin-password" placeholder="รหัสผ่าน" />
       </div>
-      <p id="auth-error" style="display:none; color:#e04848; font-size:13px; margin-bottom:10px;"></p>
+      <p id="auth-error" style="display:none; color:var(--danger); font-size:13px; margin-bottom:10px;"></p>
       <button class="btn btn-primary btn-full" id="auth-btn">เข้าสู่ระบบ</button>
     </div>
   </div>
@@ -74,12 +77,12 @@
           <p id="sit-desc-bar" style="font-size:13px; color:var(--text-muted); margin-bottom:10px; line-height:1.6;"></p>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <div style="background:var(--bg); border-radius:6px; padding:10px;">
-              <div style="font-size:11px; font-weight:700; color:#2563eb; margin-bottom:4px;">ตัวเลือก A</div>
+              <div style="font-size:11px; font-weight:700; color:var(--CFO); margin-bottom:4px;">ตัวเลือก A</div>
               <div id="sit-opt-a-bar" style="font-size:13px; font-weight:600;"></div>
               <div id="sit-opt-a-desc-bar" style="font-size:12px; color:var(--text-muted); margin-top:4px;"></div>
             </div>
             <div style="background:var(--bg); border-radius:6px; padding:10px;">
-              <div style="font-size:11px; font-weight:700; color:#e08a00; margin-bottom:4px;">ตัวเลือก B</div>
+              <div style="font-size:11px; font-weight:700; color:var(--warn); margin-bottom:4px;">ตัวเลือก B</div>
               <div id="sit-opt-b-bar" style="font-size:13px; font-weight:600;"></div>
               <div id="sit-opt-b-desc-bar" style="font-size:12px; color:var(--text-muted); margin-top:4px;"></div>
             </div>

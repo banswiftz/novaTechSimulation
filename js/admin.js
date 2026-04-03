@@ -45,6 +45,7 @@ let groupResults = {};     // group_number -> { situation_index -> winning_optio
 let votes       = [];      // votes for current situation
 let allGroupCards = {};    // group_number -> [{card_type, is_used, ...}]
 let isRevealing = false;   // lock to prevent double-reveal
+let preRevealSnapshots = {};  // sitIdx -> { [gNum]: { company, players: [{id, kpi_score, layoff_reason}] } }
 
 // ── DOM refs ─────────────────────────────────────────────────
 const jumpSelect       = document.getElementById('jump-select');
@@ -463,6 +464,9 @@ revealBtn.addEventListener('click', async () => {
     return;
   }
 
+  // Save snapshot before reveal (for undo)
+  if (!preRevealSnapshots[sitIdx]) preRevealSnapshots[sitIdx] = {};
+
   for (const gNum of groups) {
     // Skip groups already scored for this situation
     if (alreadyRevealed.has(gNum)) continue;
@@ -478,6 +482,12 @@ revealBtn.addEventListener('click', async () => {
 
     const voterVote = votes.find(v => v.player_id === voter.id);
     const currentCompany = groupScores[gNum] || { ...INITIAL_COMPANY };
+
+    // Snapshot pre-reveal state for this group
+    preRevealSnapshots[sitIdx][gNum] = {
+      company: { ...currentCompany },
+      players: groupPlayers.map(p => ({ id: p.id, kpi_score: p.kpi_score, layoff_reason: p.layoff_reason || null })),
+    };
 
     let newCompany, newPlayerScores, winner, playerUpdates;
 
@@ -641,6 +651,7 @@ resetModalConfirm.addEventListener('click', async () => {
   groupScores  = {};
   groupResults = {};
   allGroupCards = {};
+  preRevealSnapshots = {};
   gameState    = { id: 1, current_situation_index: -1, phase: 'waiting' };
   renderAll();
   showToast('รีเซ็ตเกมเรียบร้อยแล้ว', 'success');
@@ -721,125 +732,73 @@ backBtn.addEventListener('click', async () => {
   if (!confirm(`ย้อนกลับ${phase === 'revealed' ? ' (ยกเลิกการเปิดผล)' : ''}?`)) return;
   backBtn.disabled = true;
 
+  // Determine which situation to undo results for
+  const undoList = [];
   if (phase === 'revealed') {
-    // Undo reveal: revert scores for all groups for this situation
-    const groups = getGroups();
+    // Undo current situation's reveal
+    undoList.push(sitIdx);
+  } else {
+    // Going back from voting — undo previous situation if it was revealed
+    const prevRevealed = Object.values(groupResults).some(gr => gr[targetIdx] !== undefined);
+    if (prevRevealed) undoList.push(targetIdx);
+  }
+
+  const groups = getGroups();
+
+  // Restore each group from snapshot
+  for (const undoIdx of undoList) {
+    const snapshots = preRevealSnapshots[undoIdx];
     for (const gNum of groups) {
-      const result = groupResults[gNum]?.[sitIdx];
-      if (result === undefined) continue;
+      if (!groupResults[gNum]?.[undoIdx]) continue; // no result to undo
 
-      const groupPlayers = players.filter(p => p.group_number === gNum);
-      const sit = SITUATIONS[sitIdx];
+      if (snapshots?.[gNum]) {
+        // Restore from snapshot — exact pre-reveal state
+        const snap = snapshots[gNum];
 
-      if (result !== 'X') {
-        // Reverse the score changes
-        const opt = result === 'A' ? sit.optionA : sit.optionB;
-        const gs = groupScores[gNum];
-
-        // Reverse company scores
+        // Restore company scores (including fire_count from snapshot)
         await supabase.from('group_scores').upsert({
           group_number:    gNum,
-          cash_flow:       (gs.cash_flow ?? 50)       - (opt.company.cash_flow ?? 0),
-          brand_trust:     (gs.brand_trust ?? 50)     - (opt.company.brand_trust ?? 0),
-          employee_morale: (gs.employee_morale ?? 50) - (opt.company.employee_morale ?? 0),
+          cash_flow:       snap.company.cash_flow,
+          brand_trust:     snap.company.brand_trust,
+          employee_morale: snap.company.employee_morale,
+          fire_count:      snap.company.fire_count ?? 0,
         }, { onConflict: 'group_number' });
+        groupScores[gNum] = { ...snap.company };
 
-        // Reverse player KPIs
-        for (const p of groupPlayers) {
-          const delta = opt.kpi[p.role] ?? 0;
-          await supabase.from('players').update({ kpi_score: p.kpi_score - delta }).eq('id', p.id);
-          p.kpi_score -= delta;
+        // Restore all player KPIs + clear layoff_reason
+        for (const ps of snap.players) {
+          await supabase.from('players').update({
+            kpi_score: ps.kpi_score,
+            layoff_reason: ps.layoff_reason,
+          }).eq('id', ps.id);
+          const p = players.find(pl => pl.id === ps.id);
+          if (p) {
+            p.kpi_score = ps.kpi_score;
+            p.layoff_reason = ps.layoff_reason;
+          }
         }
-
-        // Update local state
-        gs.cash_flow       -= (opt.company.cash_flow ?? 0);
-        gs.brand_trust     -= (opt.company.brand_trust ?? 0);
-        gs.employee_morale -= (opt.company.employee_morale ?? 0);
-      } else {
-        // Reverse X penalty (+10 each)
-        const gs = groupScores[gNum];
-        await supabase.from('group_scores').upsert({
-          group_number:    gNum,
-          cash_flow:       gs.cash_flow + 10,
-          brand_trust:     gs.brand_trust + 10,
-          employee_morale: gs.employee_morale + 10,
-        }, { onConflict: 'group_number' });
-        gs.cash_flow += 10;
-        gs.brand_trust += 10;
-        gs.employee_morale += 10;
       }
 
       // Delete the group result
       await supabase.from('group_results').delete()
-        .eq('group_number', gNum).eq('situation_index', sitIdx);
-      if (groupResults[gNum]) delete groupResults[gNum][sitIdx];
+        .eq('group_number', gNum).eq('situation_index', undoIdx);
+      if (groupResults[gNum]) delete groupResults[gNum][undoIdx];
     }
+    delete preRevealSnapshots[undoIdx];
+  }
 
+  if (phase === 'revealed') {
     // Set phase back to voting
     await supabase.from('game_state').update({
       phase: 'voting',
       updated_at: new Date().toISOString(),
     }).eq('id', 1);
-
     showToast('ยกเลิกการเปิดผลเรียบร้อย', 'success');
   } else {
-    // Go back to previous situation — also need to undo that situation's results if revealed
-    // First check if the previous situation was revealed
-    const prevResult = Object.values(groupResults).some(gr => gr[targetIdx] !== undefined);
-
-    if (prevResult) {
-      // Undo the previous situation's reveal too
-      const groups = getGroups();
-      for (const gNum of groups) {
-        const result = groupResults[gNum]?.[targetIdx];
-        if (result === undefined) continue;
-
-        const groupPlayers = players.filter(p => p.group_number === gNum);
-        const sit = SITUATIONS[targetIdx];
-
-        if (result !== 'X') {
-          const opt = result === 'A' ? sit.optionA : sit.optionB;
-          const gs = groupScores[gNum];
-
-          await supabase.from('group_scores').upsert({
-            group_number:    gNum,
-            cash_flow:       (gs.cash_flow ?? 50)       - (opt.company.cash_flow ?? 0),
-            brand_trust:     (gs.brand_trust ?? 50)     - (opt.company.brand_trust ?? 0),
-            employee_morale: (gs.employee_morale ?? 50) - (opt.company.employee_morale ?? 0),
-            }, { onConflict: 'group_number' });
-
-          for (const p of groupPlayers) {
-            const delta = opt.kpi[p.role] ?? 0;
-            await supabase.from('players').update({ kpi_score: p.kpi_score - delta }).eq('id', p.id);
-            p.kpi_score -= delta;
-          }
-
-          gs.cash_flow       -= (opt.company.cash_flow ?? 0);
-          gs.brand_trust     -= (opt.company.brand_trust ?? 0);
-          gs.employee_morale -= (opt.company.employee_morale ?? 0);
-          } else {
-          const gs = groupScores[gNum];
-          await supabase.from('group_scores').upsert({
-            group_number:    gNum,
-            cash_flow:       gs.cash_flow + 10,
-            brand_trust:     gs.brand_trust + 10,
-            employee_morale: gs.employee_morale + 10,
-            }, { onConflict: 'group_number' });
-          gs.cash_flow += 10;
-          gs.brand_trust += 10;
-          gs.employee_morale += 10;
-        }
-
-        await supabase.from('group_results').delete()
-          .eq('group_number', gNum).eq('situation_index', targetIdx);
-        if (groupResults[gNum]) delete groupResults[gNum][targetIdx];
-      }
-    }
-
     // Delete votes for current situation
     await supabase.from('votes').delete().eq('situation_index', sitIdx);
 
-    // Move to previous situation
+    // Move to target situation
     await supabase.from('game_state').update({
       current_situation_index: targetIdx,
       phase: targetIdx === -1 ? 'waiting' : 'voting',
@@ -847,7 +806,8 @@ backBtn.addEventListener('click', async () => {
     }).eq('id', 1);
 
     votes = [];
-    showToast(`ย้อนกลับไป: ${SITUATIONS[targetIdx].title}`, 'success');
+    const label = targetIdx === -1 ? 'หน้ารอเริ่มเกม' : SITUATIONS[targetIdx].title;
+    showToast(`ย้อนกลับไป: ${label}`, 'success');
   }
 
   await loadAll();

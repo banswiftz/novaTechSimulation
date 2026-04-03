@@ -288,19 +288,26 @@ function buildGroupRow(gNum) {
     </td>`;
   }).join('');
 
-  // Role KPI cells (editable) + player name underneath
+  // Role KPI cells (editable) + player name underneath + grade badge when game ended
+  const isEnded = gameState?.phase === 'ended';
+  const fireCount = gs.fire_count ?? 0;
   const roleCells = ROLES.map(role => {
     const p = groupPlayers.find(pl => pl.role === role);
     if (!p) return `<td style="text-align:center; color:#ccc;">—</td>`;
     const fired = p.kpi_score <= FIRED_THRESHOLD;
     const voterMark = p.is_voter ? ' ★' : '';
+    const gradeBadge = isEnded ? (() => {
+      const grade = playerGrade(fired, fireCount);
+      const colors = { A: '#22c55e', B: '#4f8ef7', C: '#f59e0b', F: '#f05252' };
+      return `<span style="display:inline-block; font-size:10px; font-weight:800; color:#fff; background:${colors[grade]}; border-radius:4px; padding:1px 5px; margin-left:3px; vertical-align:middle;">${grade}</span>`;
+    })() : '';
     return `<td style="text-align:center;">
       <input type="number" class="edit-kpi" data-player-id="${p.id}" data-group="${gNum}"
         value="${p.kpi_score}" title="${p.name}${voterMark}"
         style="width:50px; text-align:center; font-weight:700; color:${scoreColor(p.kpi_score)};
         ${fired ? 'text-decoration:line-through;' : ''}
         background:transparent; border:1px solid transparent; border-radius:4px; padding:2px;
-        font-size:13px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='transparent'" />
+        font-size:13px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='transparent'" />${gradeBadge}
       <button class="remove-player-btn" data-id="${p.id}" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:10px;padding:0 0 0 2px;opacity:0.5;" title="นำ ${p.name} ออก">✕</button>
       <div style="font-size:10px; color:var(--text-muted); margin-top:1px; opacity:0.7;">${p.name}${voterMark}</div>
     </td>`;
@@ -885,6 +892,12 @@ function subscribeToChanges() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────
+function playerGrade(isFired, fireCount) {
+  if (isFired) return 'F';
+  if (fireCount === 0) return 'A';
+  if (fireCount <= 2) return 'B';
+  return 'C';
+}
 function scoreColor(v) {
   if (v <= FIRED_THRESHOLD) return 'var(--text-muted)';
   if (v <= 20) return 'var(--danger)';

@@ -209,26 +209,6 @@
     </div>
   </div>
 
-  <!-- Fire vote popup (voter only) -->
-  <div id="fire-vote-popup" style="display:none; position:fixed; inset:0; background:rgba(30,58,95,0.25); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:24px;">
-    <div class="card" style="max-width:420px; width:100%; text-align:center; box-shadow:var(--shadow-overlay); border-radius:var(--radius-xl);">
-      <div class="modal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-      <div style="font-size:20px; font-weight:700; color:var(--warn); margin-bottom:8px;">KPI บริษัทติดลบ!</div>
-      <p style="font-size:14px; color:var(--text-muted); margin-bottom:16px; line-height:1.6;">ดัชนีชี้วัดบริษัทตกต่ำกว่า 0 — กลุ่มต้องไล่ออกสมาชิก 1 คน<br>KPI ที่ติดลบถูกรีเซ็ตเป็น 5 แล้ว</p>
-      <div id="fire-vote-list" style="margin-bottom:16px;"></div>
-      <button class="btn btn-danger" id="fire-vote-confirm" disabled style="width:100%;">ยืนยันไล่ออก</button>
-    </div>
-  </div>
-
-  <!-- Fire vote waiting popup (non-voter) -->
-  <div id="fire-vote-waiting" style="display:none; position:fixed; inset:0; background:rgba(30,58,95,0.25); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:24px;">
-    <div class="card" style="max-width:420px; width:100%; text-align:center; box-shadow:var(--shadow-overlay); border-radius:var(--radius-xl);">
-      <div class="modal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-      <div style="font-size:20px; font-weight:700; color:var(--warn); margin-bottom:8px;">KPI บริษัทติดลบ!</div>
-      <p style="font-size:14px; color:var(--text-muted); margin-bottom:16px; line-height:1.6;">ดัชนีชี้วัดบริษัทตกต่ำกว่า 0 — กลุ่มต้องไล่ออกสมาชิก 1 คน<br>รอผู้โหวตเลือก...</p>
-      <div class="spinner"></div>
-    </div>
-  </div>
 
   <div id="toast-container"></div>
   <script type="module" src="js/player.js"></script>

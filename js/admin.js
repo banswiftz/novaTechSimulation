@@ -3,7 +3,7 @@ import {
   SITUATIONS, ROLES,
   INITIAL_COMPANY,
   GAME_OVER_THRESHOLD, FIRED_THRESHOLD,
-  applyScores
+  applyScores, SPECIAL_CARDS
 } from './game-data.js';
 
 // ── Auth ─────────────────────────────────────────────────────
@@ -43,12 +43,14 @@ let players     = [];      // all players across all groups
 let groupScores = {};      // group_number -> {cash_flow, brand_trust, employee_morale}
 let groupResults = {};     // group_number -> { situation_index -> winning_option }
 let votes       = [];      // votes for current situation
+let allGroupCards = {};    // group_number -> [{card_type, is_used, ...}]
 
 // ── DOM refs ─────────────────────────────────────────────────
 const jumpSelect       = document.getElementById('jump-select');
 const revealBtn        = document.getElementById('reveal-btn');
 const resetBtn         = document.getElementById('reset-btn');
 const backBtn          = document.getElementById('back-btn');
+const startNextBtn     = document.getElementById('start-next-btn');
 const phaseIndicator   = document.getElementById('phase-indicator');
 const adminProgress    = document.getElementById('admin-progress');
 const sitSummaryBar    = document.getElementById('sit-summary-bar');
@@ -103,14 +105,21 @@ async function initAdmin() {
 }
 
 async function loadAll() {
-  const [gsRes, playersRes, scoresRes, resultsRes] = await Promise.all([
+  const [gsRes, playersRes, scoresRes, resultsRes, cardsRes] = await Promise.all([
     supabase.from('game_state').select('*').eq('id', 1).single(),
     supabase.from('players').select('*').order('group_number').order('created_at'),
     supabase.from('group_scores').select('*'),
     supabase.from('group_results').select('*'),
+    supabase.from('group_cards').select('*'),
   ]);
   gameState = gsRes.data;
   players   = playersRes.data || [];
+
+  allGroupCards = {};
+  for (const c of (cardsRes.data || [])) {
+    if (!allGroupCards[c.group_number]) allGroupCards[c.group_number] = [];
+    allGroupCards[c.group_number].push(c);
+  }
 
   groupScores = {};
   for (const s of (scoresRes.data || [])) groupScores[s.group_number] = s;
@@ -273,7 +282,7 @@ function buildGroupRow(gNum) {
     </td>`;
   }).join('');
 
-  // Role KPI cells (editable)
+  // Role KPI cells (editable) + player name underneath
   const roleCells = ROLES.map(role => {
     const p = groupPlayers.find(pl => pl.role === role);
     if (!p) return `<td style="text-align:center; color:#444;">—</td>`;
@@ -287,11 +296,23 @@ function buildGroupRow(gNum) {
         background:transparent; border:1px solid transparent; border-radius:4px; padding:2px;
         font-size:13px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='transparent'" />
       <button class="remove-player-btn" data-id="${p.id}" style="background:none;border:none;cursor:pointer;color:#f05252;font-size:10px;padding:0 0 0 2px;opacity:0.5;" title="นำ ${p.name} ออก">✕</button>
+      <div style="font-size:10px; color:#8892a4; margin-top:1px; opacity:0.7;">${p.name}${voterMark}</div>
     </td>`;
   }).join('');
 
   const fireTag = pendingFire ? ' <span style="color:#f59e0b; font-size:11px; font-weight:600;">⚠ รอไล่ออก</span>' : '';
-  tr.innerHTML = `<td style="font-weight:700; white-space:nowrap; padding-right:8px;">กลุ่ม ${gNum}${fireTag}</td>${sitCells}${metricCells}${roleCells}`;
+
+  // Cards display
+  const cards = allGroupCards[gNum] || [];
+  const cardTags = cards.map(c => {
+    const card = SPECIAL_CARDS[c.card_type];
+    if (!card) return '';
+    const status = c.is_used ? '✅' : '';
+    return `<span title="${card.nameTh}${c.is_used ? ' (ใช้แล้ว)' : ''}" style="font-size:12px; opacity:${c.is_used ? '0.5' : '1'};">${card.icon}${status}</span>`;
+  }).join(' ');
+  const cardDisplay = cardTags ? ` <span style="margin-left:4px;">${cardTags}</span>` : '';
+
+  tr.innerHTML = `<td style="font-weight:700; white-space:nowrap; padding-right:8px;">กลุ่ม ${gNum}${cardDisplay}${fireTag}</td>${sitCells}${metricCells}${roleCells}`;
 
   tr.querySelectorAll('.remove-player-btn').forEach(btn => {
     btn.addEventListener('click', () => removePlayer(btn.dataset.id));
@@ -328,6 +349,29 @@ function updateButtons() {
     (phase === 'revealed' && sitIdx >= 0) ||
     (phase === 'voting' && sitIdx > 0)
   );
+
+  // Start/Next button
+  if (sitIdx === -1) {
+    // Game not started
+    startNextBtn.textContent = '▶ เริ่มเกม';
+    startNextBtn.disabled = false;
+    startNextBtn.className = 'btn btn-primary';
+  } else if (phase === 'revealed' && sitIdx < SITUATIONS.length - 1) {
+    // Revealed, more situations ahead
+    startNextBtn.textContent = '⏭ สถานการณ์ถัดไป';
+    startNextBtn.disabled = false;
+    startNextBtn.className = 'btn btn-primary';
+  } else if (phase === 'revealed' && sitIdx === SITUATIONS.length - 1) {
+    // Last situation revealed → end game
+    startNextBtn.textContent = '🏁 จบเกม';
+    startNextBtn.disabled = false;
+    startNextBtn.className = 'btn btn-primary';
+  } else {
+    // Voting in progress or game ended
+    startNextBtn.textContent = sitIdx >= SITUATIONS.length ? '🏁 เกมจบแล้ว' : '⏭ สถานการณ์ถัดไป';
+    startNextBtn.disabled = true;
+    startNextBtn.className = 'btn btn-ghost btn-sm';
+  }
 }
 
 // ── Jump to situation ─────────────────────────────────────────
@@ -355,6 +399,37 @@ jumpSelect.addEventListener('change', async () => {
     showToast(`เปลี่ยนไป: ${label}`, 'success');
   }
   jumpSelect.disabled = false;
+});
+
+// ── Start / Next button ──────────────────────────────────────
+startNextBtn.addEventListener('click', async () => {
+  const sitIdx = gameState?.current_situation_index ?? -1;
+  const phase  = gameState?.phase ?? 'waiting';
+  let targetIdx;
+
+  if (sitIdx === -1) {
+    targetIdx = 0; // Start → S1
+  } else if (phase === 'revealed') {
+    targetIdx = sitIdx + 1; // Next situation (or end game)
+  } else {
+    return;
+  }
+
+  startNextBtn.disabled = true;
+  const { error } = await supabase.from('game_state').update({
+    current_situation_index: targetIdx,
+    phase: targetIdx >= SITUATIONS.length ? 'ended' : 'voting',
+    updated_at: new Date().toISOString(),
+  }).eq('id', 1);
+
+  if (error) {
+    showToast('เกิดข้อผิดพลาด', 'error');
+  } else {
+    votes = [];
+    const label = targetIdx >= SITUATIONS.length ? 'จบเกม' : SITUATIONS[targetIdx].title;
+    showToast(`เปลี่ยนไป: ${label}`, 'success');
+  }
+  startNextBtn.disabled = false;
 });
 
 revealBtn.addEventListener('click', async () => {
@@ -511,6 +586,7 @@ resetBtn.addEventListener('click', async () => {
   votes        = [];
   groupScores  = {};
   groupResults = {};
+  allGroupCards = {};
   gameState    = { id: 1, current_situation_index: -1, phase: 'waiting' };
   renderAll();
   showToast('รีเซ็ตเกมเรียบร้อยแล้ว', 'success');
@@ -771,6 +847,15 @@ function subscribeToChanges() {
         groupResults[payload.new.group_number][payload.new.situation_index] = payload.new.winning_option;
         renderGroupTable();
       }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'group_cards' }, async () => {
+      const { data } = await supabase.from('group_cards').select('*');
+      allGroupCards = {};
+      for (const c of (data || [])) {
+        if (!allGroupCards[c.group_number]) allGroupCards[c.group_number] = [];
+        allGroupCards[c.group_number].push(c);
+      }
+      renderGroupTable();
     })
     .subscribe((status, err) => {
       console.log('[Admin Realtime]', status, err || '');

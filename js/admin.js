@@ -338,10 +338,10 @@ function updateButtons() {
 
   revealBtn.disabled = phase !== 'voting' || sitIdx < 0;
 
-  // Back button: enabled when revealed, or when voting and not at first situation
+  // Back button: enabled when revealed, or when voting (including S1 → back to waiting)
   backBtn.disabled = !(
     (phase === 'revealed' && sitIdx >= 0) ||
-    (phase === 'voting' && sitIdx > 0)
+    (phase === 'voting' && sitIdx >= 0)
   );
 
   // Start/Next button
@@ -711,6 +711,9 @@ backBtn.addEventListener('click', async () => {
   } else if (phase === 'voting' && sitIdx > 0) {
     // Go back to previous situation
     targetIdx = sitIdx - 1;
+  } else if (phase === 'voting' && sitIdx === 0) {
+    // Go back to waiting (before game started)
+    targetIdx = -1;
   } else {
     return;
   }
@@ -836,10 +839,10 @@ backBtn.addEventListener('click', async () => {
     // Delete votes for current situation
     await supabase.from('votes').delete().eq('situation_index', sitIdx);
 
-    // Move to previous situation in voting phase
+    // Move to previous situation
     await supabase.from('game_state').update({
       current_situation_index: targetIdx,
-      phase: 'voting',
+      phase: targetIdx === -1 ? 'waiting' : 'voting',
       updated_at: new Date().toISOString(),
     }).eq('id', 1);
 

@@ -427,9 +427,11 @@ revealBtn.addEventListener('click', async () => {
       for (const p of groupPlayers) currentKpis[p.role] = p.kpi_score;
       ({ newCompany, newPlayerScores } = applyScores(sitIdx, winner, currentKpis, currentCompany));
 
-      playerUpdates = groupPlayers.map(p =>
-        supabase.from('players').update({ kpi_score: newPlayerScores[p.role] }).eq('id', p.id)
-      );
+      playerUpdates = groupPlayers
+        .filter(p => p.kpi_score > FIRED_THRESHOLD)  // freeze KPI for fired players
+        .map(p =>
+          supabase.from('players').update({ kpi_score: newPlayerScores[p.role] }).eq('id', p.id)
+        );
     }
 
     const [companyRes, resultRes, ...playerResults] = await Promise.all([
@@ -454,7 +456,9 @@ revealBtn.addEventListener('click', async () => {
       if (!groupResults[gNum]) groupResults[gNum] = {};
       groupResults[gNum][sitIdx] = winner;
       if (newPlayerScores) {
-        for (const p of groupPlayers) p.kpi_score = newPlayerScores[p.role];
+        for (const p of groupPlayers) {
+          if (p.kpi_score > FIRED_THRESHOLD) p.kpi_score = newPlayerScores[p.role];
+        }
       }
     }
   }

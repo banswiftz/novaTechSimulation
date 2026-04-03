@@ -180,6 +180,16 @@
 
   </div>
 
+  <!-- Fired popup -->
+  <div id="fired-popup" style="display:none; position:fixed; inset:0; background:rgba(15,17,23,.92); z-index:9998; align-items:center; justify-content:center; padding:24px;">
+    <div class="card" style="max-width:420px; width:100%; text-align:center;">
+      <div style="font-size:48px; margin-bottom:12px;">🚫</div>
+      <div style="font-size:20px; font-weight:700; color:#f05252; margin-bottom:8px;">คุณถูกไล่ออก</div>
+      <p id="fired-popup-msg" style="font-size:14px; color:#8892a4; margin-bottom:20px; line-height:1.6;"></p>
+      <button class="btn btn-primary" id="fired-popup-close">รับทราบ</button>
+    </div>
+  </div>
+
   <div id="toast-container"></div>
   <script type="module" src="js/player.js"></script>
 </body>

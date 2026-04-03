@@ -78,12 +78,23 @@ function showRemovedScreen(headline, sub) {
   overlay.style.display = 'flex';
 }
 
+// Fired popup DOM
+const firedPopup     = document.getElementById('fired-popup');
+const firedPopupMsg  = document.getElementById('fired-popup-msg');
+const firedPopupClose = document.getElementById('fired-popup-close');
+
+firedPopupClose.addEventListener('click', () => {
+  firedPopup.style.display = 'none';
+});
+
 // ── Local state ──────────────────────────────────────────────
 let currentSitIdx   = -1;
 let myVote          = null;
 let lastRevealedIdx = -1;
 let myKpiScore      = 50;
 let groupCards      = [];  // [{card_type, is_used, used_at_situation, card_metadata}]
+let firedPopupShown = false;
+let initialized     = false;
 
 // ── Init ─────────────────────────────────────────────────────
 async function init() {
@@ -100,6 +111,7 @@ async function init() {
   renderCardsPanel();
   if (gameState) await applyGameState(gameState, company, player);
 
+  initialized = true;
   subscribeToChanges();
 }
 
@@ -427,13 +439,6 @@ function showVoting(sit, alreadyVoted) {
 
   optionsGrid.style.display = '';
 
-  if (myKpiScore <= FIRED_THRESHOLD) {
-    btnA.disabled = true; btnB.disabled = true;
-    votedNotice.style.display = 'block';
-    votedNotice.textContent = 'คุณถูกไล่ออกแล้ว — ไม่สามารถโหวตได้';
-    return;
-  }
-
   votedNotice.textContent = 'ส่งโหวตแล้ว — รอผู้ดำเนินเกมเปิดผล';
 
   if (alreadyVoted) {
@@ -589,11 +594,26 @@ async function showEndScreen(player, company) {
 
 // ── Update KPI ────────────────────────────────────────────────
 function updateKpi(score) {
+  const wasFired = myKpiScore <= FIRED_THRESHOLD;
+  const nowFired = score <= FIRED_THRESHOLD;
+
   myKpiScore = score;
   kpiValue.textContent = score;
-  const cls = score <= FIRED_THRESHOLD ? 'dead' : score <= 20 ? 'low' : score <= 35 ? 'medium' : 'high';
+  const cls = nowFired ? 'dead' : score <= 20 ? 'low' : score <= 35 ? 'medium' : 'high';
   kpiValue.className = `kpi-value ${cls}`;
-  firedNotice.style.display = score <= FIRED_THRESHOLD ? 'block' : 'none';
+  firedNotice.style.display = nowFired ? 'block' : 'none';
+
+  // Show fired popup once on transition (not on initial page load)
+  if (initialized && nowFired && !wasFired && !firedPopupShown) {
+    firedPopupMsg.textContent = `คุณ ${playerName} ตำแหน่ง ${playerRole} ถูกไล่ออกเนื่องจาก KPI ต่ำกว่าที่กำหนด`;
+    firedPopup.style.display = 'flex';
+    firedPopupShown = true;
+  }
+
+  // If admin edits KPI back to positive → reset fired status so popup can trigger again later
+  if (!nowFired && wasFired) {
+    firedPopupShown = false;
+  }
 }
 
 function kpiColor(score) {

@@ -499,12 +499,16 @@ revealBtn.addEventListener('click', async () => {
       ({ newCompany, newPlayerScores } = applyScores(sitIdx, winner, currentKpis, currentCompany));
 
       // Apply new scores to local state first (so layoff uses post-situation scores)
+      // If personal KPI drops ≤ 0 → clamp to FIRED_THRESHOLD (auto-fired)
       for (const p of groupPlayers) {
-        if (p.kpi_score > FIRED_THRESHOLD) p.kpi_score = newPlayerScores[p.role];
+        if (p.kpi_score > FIRED_THRESHOLD) {
+          p.kpi_score = newPlayerScores[p.role];
+          if (p.kpi_score <= FIRED_THRESHOLD) p.kpi_score = FIRED_THRESHOLD;
+        }
       }
     }
 
-    // Check if any company KPI went ≤ 0 → reset to +5 and auto-layoff lowest KPI player
+    // Check if any company KPI went ≤ 0 → auto-layoff lowest KPI player → then reset to 5
     let autoLayoff = false;
     let layoffPlayerId = null;
     let layoffReason = null;
@@ -513,9 +517,9 @@ revealBtn.addEventListener('click', async () => {
         newCompany.employee_morale <= GAME_OVER_THRESHOLD) {
       autoLayoff = true;
       const reasons = [];
-      if (newCompany.cash_flow <= GAME_OVER_THRESHOLD) { reasons.push('กระแสเงินสด'); newCompany.cash_flow = 5; }
-      if (newCompany.brand_trust <= GAME_OVER_THRESHOLD) { reasons.push('ความเชื่อมั่นแบรนด์'); newCompany.brand_trust = 5; }
-      if (newCompany.employee_morale <= GAME_OVER_THRESHOLD) { reasons.push('ขวัญกำลังใจ'); newCompany.employee_morale = 5; }
+      if (newCompany.cash_flow <= GAME_OVER_THRESHOLD) reasons.push('กระแสเงินสด');
+      if (newCompany.brand_trust <= GAME_OVER_THRESHOLD) reasons.push('ความเชื่อมั่นแบรนด์');
+      if (newCompany.employee_morale <= GAME_OVER_THRESHOLD) reasons.push('ขวัญกำลังใจ');
 
       // Auto-layoff: fire the player with lowest KPI (using post-situation scores)
       // If tied, pick randomly among the lowest
@@ -532,6 +536,11 @@ revealBtn.addEventListener('click', async () => {
       } else {
         showToast(`กลุ่ม ${gNum}: ${reasons.join(', ')} ติดลบ → ไม่มีสมาชิกเหลือให้ lay off`, 'error');
       }
+
+      // Reset negative company metrics to 5 AFTER layoff
+      if (newCompany.cash_flow <= GAME_OVER_THRESHOLD) newCompany.cash_flow = 5;
+      if (newCompany.brand_trust <= GAME_OVER_THRESHOLD) newCompany.brand_trust = 5;
+      if (newCompany.employee_morale <= GAME_OVER_THRESHOLD) newCompany.employee_morale = 5;
     }
 
     // Build player DB updates from final local state (already includes layoff)

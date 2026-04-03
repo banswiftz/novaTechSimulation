@@ -486,6 +486,8 @@ revealBtn.addEventListener('click', async () => {
       groupPlayers.filter(p => p.kpi_score <= FIRED_THRESHOLD).map(p => p.id)
     );
 
+    const personalFiredIds = new Set();
+
     if (!voterVote) {
       // No-vote penalty (X): company -10 each, KPI unchanged
       winner = 'X';
@@ -508,7 +510,10 @@ revealBtn.addEventListener('click', async () => {
       for (const p of groupPlayers) {
         if (p.kpi_score > FIRED_THRESHOLD) {
           p.kpi_score = newPlayerScores[p.role];
-          if (p.kpi_score <= FIRED_THRESHOLD) p.kpi_score = FIRED_THRESHOLD;
+          if (p.kpi_score <= FIRED_THRESHOLD) {
+            p.kpi_score = FIRED_THRESHOLD;
+            personalFiredIds.add(p.id);
+          }
         }
       }
     }
@@ -553,7 +558,11 @@ revealBtn.addEventListener('click', async () => {
       .filter(p => !alreadyFiredIds.has(p.id))
       .map(p => {
         const update = { kpi_score: p.kpi_score };
-        if (p.id === layoffPlayerId) update.layoff_reason = layoffReason;
+        if (p.id === layoffPlayerId) {
+          update.layoff_reason = layoffReason;
+        } else if (personalFiredIds.has(p.id)) {
+          update.layoff_reason = 'KPI ส่วนตัวต่ำกว่าเกณฑ์';
+        }
         return supabase.from('players').update(update).eq('id', p.id);
       });
 

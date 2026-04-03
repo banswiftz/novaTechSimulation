@@ -85,6 +85,10 @@ if (checkAuth()) initAdmin();
 
 // ── Init ─────────────────────────────────────────────────────
 async function initAdmin() {
+  // Show loading
+  const ls = document.getElementById('loading-screen');
+  if (ls) ls.classList.remove('hide');
+
   // Populate situation selector once
   SITUATIONS.forEach(sit => {
     const opt = document.createElement('option');
@@ -103,6 +107,9 @@ async function initAdmin() {
   await loadAll();
   renderAll();
   subscribeToChanges();
+
+  // Hide loading screen
+  if (ls) ls.classList.add('hide');
 }
 
 async function loadAll() {

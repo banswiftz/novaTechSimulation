@@ -122,6 +122,10 @@ async function init() {
   initialized = true;
   if (company) checkFireVote(company);
   subscribeToChanges();
+
+  // Hide loading screen
+  const ls = document.getElementById('loading-screen');
+  if (ls) ls.classList.add('hide');
 }
 
 // ── Subscriptions ─────────────────────────────────────────────

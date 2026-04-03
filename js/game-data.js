@@ -248,7 +248,7 @@ export const SPECIAL_CARDS = {
   consulting_report: {
     id: 'consulting_report',
     name: 'Consulting Firm Report',
-    nameTh: 'รายงานบริษัทที่ปรึกษา',
+    nameTh: 'Consulting Firm Report',
     description: 'เปิดเผยผลกระทบ KPI บริษัทของทั้งตัวเลือก A และ B ให้ทั้งกลุ่มเห็น',
     icon: '📊',
     useDuring: 'voting',
@@ -256,7 +256,7 @@ export const SPECIAL_CARDS = {
   global_pr: {
     id: 'global_pr',
     name: 'Global PR Blitz',
-    nameTh: 'แคมเปญ PR ระดับโลก',
+    nameTh: 'Global PR Blitz',
     description: 'เลือก KPI บริษัท 1 ตัว แล้วเพิ่ม +20 ทันที',
     icon: '📢',
     useDuring: 'anytime',

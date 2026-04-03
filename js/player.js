@@ -241,7 +241,7 @@ function activateConsultingReport() {
   const sit = SITUATIONS[currentSitIdx];
   if (!sit) return;
 
-  cardModalTitle.textContent = '📊 รายงานบริษัทที่ปรึกษา';
+  cardModalTitle.textContent = '📊 Consulting Firm Report';
   cardModalDesc.textContent = 'ยืนยันเปิดเผยผลกระทบ KPI บริษัทของทั้ง 2 ตัวเลือกให้ทั้งกลุ่มเห็น?';
   cardModalBody.innerHTML = '<p style="color:#4f8ef7; font-size:13px;">ข้อมูลจะแสดงบนหน้าโหวตของทุกคนในกลุ่ม</p>';
 
@@ -282,7 +282,7 @@ function clearConsultingDeltas() {
 
 // -- Global PR Blitz --
 function activateGlobalPR() {
-  cardModalTitle.textContent = '📢 แคมเปญ PR ระดับโลก';
+  cardModalTitle.textContent = '📢 Global PR Blitz';
   cardModalDesc.textContent = 'เลือก KPI บริษัท 1 ตัวเพื่อเพิ่ม +20 ทันที:';
 
   const options = [

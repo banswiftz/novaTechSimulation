@@ -201,6 +201,8 @@ function subscribeToChanges() {
         lastRevealedIdx = currentSitIdx;
         const { data: company } = await supabase.from('group_scores').select('*').eq('group_number', groupNumber).single();
         const { data: player }  = await supabase.from('players').select('*').eq('id', playerId).single();
+        if (player) updateKpi(player.kpi_score, player.layoff_reason);
+        if (company) updateCompany(company);
         showRevealed(SITUATIONS[currentSitIdx], result.winning_option, company, player);
       }
     })
@@ -404,6 +406,10 @@ async function applyGameState(gs, company, player) {
   currentPhase  = gs.phase || 'waiting';
   updateProgress(currentSitIdx);
   renderCardsPanel(); // re-render cards with current situation context
+
+  // Always sync KPI from fetched player data
+  if (player) updateKpi(player.kpi_score, player.layoff_reason);
+  if (company) updateCompany(company);
 
   if (currentSitIdx === -1) { showState('lobby'); return; }
   if (currentSitIdx >= SITUATIONS.length) { showEndScreen(player, company); return; }

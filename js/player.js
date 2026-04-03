@@ -729,11 +729,22 @@ function updateKpi(score, layoffReason) {
   firedNotice.style.display = nowFired ? 'block' : 'none';
 
   // Show fired popup once on transition (not on initial page load)
+  // If layoffReason not available yet, wait for next updateKpi call with reason
   if (initialized && nowFired && !wasFired && !firedPopupShown) {
-    const reason = layoffReason || 'KPI ต่ำที่สุดในกลุ่ม';
-    firedPopupMsg.textContent = `คุณ ${playerName} ตำแหน่ง ${playerRole} ถูก lay off — ${reason}`;
-    firedPopup.style.display = 'flex';
-    firedPopupShown = true;
+    if (layoffReason) {
+      firedPopupMsg.textContent = `คุณ ${playerName} ตำแหน่ง ${playerRole} ถูก lay off — ${layoffReason}`;
+      firedPopup.style.display = 'flex';
+      firedPopupShown = true;
+    } else {
+      // Reason not yet available — fetch from DB
+      supabase.from('players').select('layoff_reason').eq('id', playerId).single().then(({ data }) => {
+        if (firedPopupShown) return; // already shown by another event
+        const reason = data?.layoff_reason || 'KPI ต่ำกว่าเกณฑ์';
+        firedPopupMsg.textContent = `คุณ ${playerName} ตำแหน่ง ${playerRole} ถูก lay off — ${reason}`;
+        firedPopup.style.display = 'flex';
+        firedPopupShown = true;
+      });
+    }
   }
 
   // If admin edits KPI back to positive → reset fired status so popup can trigger again later
